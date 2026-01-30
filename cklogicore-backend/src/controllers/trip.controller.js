@@ -6,6 +6,32 @@ import Supplier from "../models/supplierOwner.model.js";
 import Company from "../models/companyOwner.model.js";
 import Vehicle from "../models/vehicleOwner.model.js";
 
+
+// 🔹 Get Trips (with optional filters)
+export const getTrips = async (req, res) => {
+  const { fromDate, toDate, companyId, supplierId, vehicleId } = req.query;
+
+  let filter = {
+    accountId: req.user.accountId,
+    // isDeleted: false
+  };
+
+
+  // if (fromDate && toDate) filter.date = { $gte: fromDate, $lte: toDate };
+  if (fromDate && toDate) filter.tripDate = { $gte: fromDate, $lte: toDate };
+  if (companyId) filter.companyId = companyId;
+  if (supplierId) filter.supplierId = supplierId;
+  if (vehicleId) filter.vehicleId = vehicleId;
+
+  const trips = await Trip.find(filter)
+    .populate("supplierId", "name")
+    .populate("companyId", "name")
+    .populate("vehicleId", "vehicleNumber");
+
+  res.json(trips);
+};
+
+// 🔹 Add Trips (with optional filters)
 export const addTrip = async (req, res) => {
   try {
     const {
@@ -20,16 +46,18 @@ export const addTrip = async (req, res) => {
       unloadingPoint
     } = req.body;
 
-    const accountId = req.user.accountId;
-
-    if (!accountId) {
-      return res.status(403).json({
-        message: "AccountId missing. Trip cannot be created."
+    // ✅ Basic Validation
+    if (!supplierId || !companyId || !vehicleId || !totalTonLoad) {
+      return res.status(400).json({
+        message: "supplierId, companyId, vehicleId, totalTonLoad are required"
       });
     }
 
+
+    const accountId = req.user.accountId;
+
     if (!accountId) {
-      return res.status(401).json({ message: "AccountId missing in token" });
+      return res.status(401).json({ message: "Invalid token" });
     }
 
     // 🔐 VALIDATION: all must belong to same tenant
@@ -76,25 +104,70 @@ export const addTrip = async (req, res) => {
   }
 };
 
-// 🔹 Get Trips (with optional filters)
-export const getTrips = async (req, res) => {
-  const { fromDate, toDate, companyId, supplierId, vehicleId } = req.query;
+// 🔹 updateTrip
+export const updateTrip = async (req, res) => {
+  try {
+    const trip = await Trip.findOneAndUpdate(
+      {
+        _id: req.params.id,
+        accountId: req.user.accountId,
+        isDeleted: false
+      },
+      {
+        $set: req.body
+      },
+      {
+        new: true,
+        runValidators: true
+      }
+    );
 
-  let filter = { accountId: req.user.accountId };
+    if (!trip) {
+      return res.status(404).json({ message: "Trip not found" });
+    }
 
-  // if (fromDate && toDate) filter.date = { $gte: fromDate, $lte: toDate };
-  if (fromDate && toDate) filter.tripDate = { $gte: fromDate, $lte: toDate };
-  if (companyId) filter.companyId = companyId;
-  if (supplierId) filter.supplierId = supplierId;
-  if (vehicleId) filter.vehicleId = vehicleId;
+    res.json(trip);
 
-  const trips = await Trip.find(filter)
-    .populate("supplierId", "name")
-    .populate("companyId", "name")
-    .populate("vehicleId", "vehicleNumber");
+  } catch (err) {
+    console.error("UPDATE TRIP ERROR:", err);
 
-  res.json(trips);
+    res.status(500).json({
+      message: "Failed to update trip",
+      error: err.message
+    });
+  }
 };
+
+
+// 🔹 Toggle Trip (Enable / Disable)
+export const toggleTrip = async (req, res, next) => {
+  try {
+    const trip = await Trip.findOne({
+      _id: req.params.id,
+      accountId: req.user.accountId
+    });
+
+    if (!trip) {
+      return res.status(404).json({ message: "Trip not found" });
+    }
+
+    // Toggle
+    const newState = !trip.isDeleted;
+
+    trip.isDeleted = newState;
+    trip.status = newState ? "cancelled" : "pending";
+    trip.deletedAt = newState ? new Date() : null; // ✅ ADD
+
+    await trip.save();
+
+    res.json(trip);
+
+  } catch (err) {
+    next(err); // ✅ IMPORTANT
+  }
+};
+
+
 
 // 🔹 Add Advance Payment
 export const addAdvancePayment = async (req, res) => {
@@ -129,7 +202,8 @@ export const getAdvancePayments = async (req, res) => {
 export const recalculateTripProfit = async (req, res) => {
   const trip = await Trip.findOne({
     _id: req.params.id,
-    accountId: req.user.accountId
+    accountId: req.user.accountId,
+    isDeleted: false
   });
 
   if (!trip) {
@@ -141,3 +215,4 @@ export const recalculateTripProfit = async (req, res) => {
 
   res.json({ profit: trip.profit });
 };
+

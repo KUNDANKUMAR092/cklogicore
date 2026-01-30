@@ -35,7 +35,11 @@ const userSchema = new mongoose.Schema(
     resetPasswordToken: String,
     resetPasswordExpires: Date,
 
-
+    permissions: {
+      ADD_SUPPLIER: { type: Boolean, default: false },
+      ADD_COMPANY: { type: Boolean, default: false },
+      ADD_VEHICLE: { type: Boolean, default: false },
+    }
   },
   { timestamps: true }
 );

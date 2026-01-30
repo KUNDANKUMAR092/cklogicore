@@ -1,5 +1,5 @@
 import express from "express";
-import { protect } from "../middlewares/auth.middleware.js";
+import { authMiddleware } from "../middlewares/auth.middleware.js";
 import { authorizeRoles } from "../middlewares/role.middleware.js";
 import {
   companyReport,
@@ -10,7 +10,7 @@ import {
 
 const router = express.Router();
 
-router.use(protect);
+router.use(authMiddleware);
 
 router.get(
   "/suppliers",

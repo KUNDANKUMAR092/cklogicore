@@ -81,4 +81,23 @@ export const deleteSupplier = async (req, res) => {
   res.json({ message: "Supplier deleted (soft)" });
 };
 
+export const getMySupplierProfile = async (req, res) => {
+  try {
+    const userId = req.user._id;
 
+    const supplier = await Supplier.findOne({
+      createdBy: userId,
+      isActive: true,
+    });
+
+    if (!supplier) {
+      return res.status(404).json({
+        message: "Profile not found",
+      });
+    }
+
+    res.json(supplier);
+  } catch (err) {
+    res.status(500).json({ message: "Server error" });
+  }
+};

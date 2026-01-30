@@ -1,7 +1,9 @@
 import express from "express";
 import {
-  addTrip,
   getTrips,
+  addTrip,
+  toggleTrip,
+  updateTrip,
   addAdvancePayment,
   getAdvancePayments,
   recalculateTripProfit
@@ -14,8 +16,11 @@ const router = express.Router();
 router.use(authMiddleware);
 
 // Trips
-router.post("/", authorizeRoles("ADMIN", "STAFF"), addTrip);
 router.get("/", getTrips);
+router.post("/", authorizeRoles("ADMIN", "STAFF"), addTrip);
+
+router.put("/:id", authorizeRoles("ADMIN"), updateTrip);
+router.patch("/:id/toggle", authorizeRoles("ADMIN"), toggleTrip);
 
 // Advance Payment
 router.post("/advance", authorizeRoles("ADMIN", "STAFF"), addAdvancePayment);

@@ -1,6 +1,6 @@
 import express from "express";
 import { createUser, deleteUser, getUsers, updateUser } from "../controllers/user.controller.js";
-import { protect } from "../middlewares/auth.middleware.js";
+import { authMiddleware } from "../middlewares/auth.middleware.js";
 import { allowRoles } from "../middlewares/role.middleware.js";
 
 const router = express.Router();
@@ -8,7 +8,7 @@ const router = express.Router();
 // ADMIN can see all users
 router.get(
   "/",
-  protect,
+  authMiddleware,
   allowRoles("ADMIN"),
   getUsers
 );
@@ -16,7 +16,7 @@ router.get(
 // ADMIN can create staff
 router.post(
   "/",
-  protect,
+  authMiddleware,
   allowRoles("ADMIN"),
   createUser
 );
@@ -24,7 +24,7 @@ router.post(
 // ADMIN can Update staff
 router.put(
   "/:id", 
-  protect,
+  authMiddleware,
   allowRoles("ADMIN"),
   updateUser
 );  
@@ -32,7 +32,7 @@ router.put(
 // ADMIN can Delete staff
 router.delete(
   "/:id", 
-  protect,
+  authMiddleware,
   allowRoles("ADMIN"),
   deleteUser
 );

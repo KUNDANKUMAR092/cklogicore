@@ -10,8 +10,6 @@ const authSlice = createSlice({
   initialState,
   reducers: {
     setCredentials: (state, action) => {
-      console.log("user===>redux",action.payload )
-      console.log("accessToken====>redux", action.payload)
       state.user = action.payload.user
       state.accessToken = action.payload.token
       // ✅ save to localStorage

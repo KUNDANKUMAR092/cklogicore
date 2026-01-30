@@ -54,7 +54,7 @@ const SupplierPage = () => {
         <h1 className="text-2xl font-bold mb-4">Suppliers</h1>
         <button onClick={() => setOpen(true)} className="px-4 py-1 bg-blue-500 text-white rounded text-base flex justify-around items-center cursor-pointer"
         >
-          <FaPlus size={12} className="mr-[2px]" /> Edit
+          <FaPlus size={12} className="mr-[2px]" /> Add
         </button>
       </div>
 
