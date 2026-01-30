@@ -1,7 +1,9 @@
+// src/routes/user.routes.js
+
 import express from "express";
 import { createUser, deleteUser, getUsers, updateUser } from "../controllers/user.controller.js";
 import { authMiddleware } from "../middlewares/auth.middleware.js";
-import { allowRoles } from "../middlewares/role.middleware.js";
+import { authorize } from "../middlewares/authorize.middleware.js";
 
 const router = express.Router();
 
@@ -9,7 +11,9 @@ const router = express.Router();
 router.get(
   "/",
   authMiddleware,
-  allowRoles("ADMIN"),
+  authorize({
+    roles: ["ADMIN"]
+  }),
   getUsers
 );
 
@@ -17,7 +21,9 @@ router.get(
 router.post(
   "/",
   authMiddleware,
-  allowRoles("ADMIN"),
+  authorize({
+    roles: ["ADMIN"]
+  }),
   createUser
 );
 
@@ -25,7 +31,9 @@ router.post(
 router.put(
   "/:id", 
   authMiddleware,
-  allowRoles("ADMIN"),
+  authorize({
+    roles: ["ADMIN"]
+  }),
   updateUser
 );  
 
@@ -33,7 +41,9 @@ router.put(
 router.delete(
   "/:id", 
   authMiddleware,
-  allowRoles("ADMIN"),
+  authorize({
+    roles: ["ADMIN"]
+  }),
   deleteUser
 );
 

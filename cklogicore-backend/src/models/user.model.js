@@ -1,3 +1,5 @@
+// src/models/user.model.js
+
 import mongoose from "mongoose";
 import crypto from "crypto";
 import { ROLES } from "../constants/roles.js";

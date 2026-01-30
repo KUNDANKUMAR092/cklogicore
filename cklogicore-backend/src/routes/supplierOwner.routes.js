@@ -7,8 +7,7 @@ import {
 } from "../controllers/supplierOwner.controller.js";
 
 import { authMiddleware } from "../middlewares/auth.middleware.js";
-import { authorizeRoles } from "../middlewares/role.middleware.js";
-import { checkPermission } from "../middlewares/accountPermission.middleware.js";
+import { authorize } from "../middlewares/authorize.middleware.js";
 import { ACCOUNT_TYPES } from "../constants/accountTypes.js";
 import { ROLES } from "../constants/roles.js";
 import { PERMISSIONS } from "../constants/permissions.js";
@@ -21,18 +20,14 @@ router.use(authMiddleware);
 // ✅ ADMIN can create supplier (ANY tenant type)
 router.post(
   "/suppliers",
-  checkPermission({
-    allowFor: [ACCOUNT_TYPES.COMPANY, ACCOUNT_TYPES.VEHICLE],
-    allowedRoles: [ROLES.ADMIN, ROLES.STAFF],
-    requiredPermission: PERMISSIONS.ADD_SUPPLIER,
+  authorize({
+    roles: ["STAFF"],
+    accountTypes: ["SUPPLIER"],
+    permissions: ["ADD_SUPPLIER"],
   }),
   createSupplier
 );
-// router.post(
-//   "/",
-//   authorizeRoles("ADMIN"),
-//   createSupplier
-// );
+
 
 // ✅ Any logged-in user can view suppliers
 router.get("/", getSuppliers);
@@ -40,10 +35,10 @@ router.get("/", getSuppliers);
 // ✅ ADMIN only
 router.put(
   "/:id",
-  checkPermission({
-    allowFor: [ACCOUNT_TYPES.COMPANY, ACCOUNT_TYPES.VEHICLE],
-    allowedRoles: [ROLES.ADMIN, ROLES.STAFF],
-    requiredPermission: PERMISSIONS.ADD_SUPPLIER,
+  authorize({
+    roles: ["STAFF"],
+    accountTypes: ["SUPPLIER"],
+    permissions: ["ADD_SUPPLIER"],
   }),
   updateSupplier
 );
@@ -51,10 +46,10 @@ router.put(
 // ✅ ADMIN only
 router.delete(
   "/:id",
-  checkPermission({
-    allowFor: [ACCOUNT_TYPES.COMPANY, ACCOUNT_TYPES.VEHICLE],
-    allowedRoles: [ROLES.ADMIN, ROLES.STAFF],
-    requiredPermission: PERMISSIONS.ADD_SUPPLIER,
+  authorize({
+    roles: ["STAFF"],
+    accountTypes: ["SUPPLIER"],
+    permissions: ["ADD_SUPPLIER"],
   }),
   deleteSupplier
 );

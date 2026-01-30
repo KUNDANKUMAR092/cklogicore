@@ -1,6 +1,7 @@
 import express from "express";
 import { authMiddleware } from "../middlewares/auth.middleware.js";
-import { authorizeRoles } from "../middlewares/role.middleware.js";
+import { authorize } from "../middlewares/authorize.middleware.js";
+
 import {
   companyReport,
   profitSummary,
@@ -14,25 +15,33 @@ router.use(authMiddleware);
 
 router.get(
   "/suppliers",
-  authorizeRoles("ADMIN"),
+  authorize({
+    roles: ["ADMIN"]
+  }),
   supplierReport
 );
 
 router.get(
   "/vehicles",
-  authorizeRoles("ADMIN"),
+  authorize({
+    roles: ["ADMIN"]
+  }),
   vehicleReport
 );
 
 router.get(
   "/companies",
-  authorizeRoles("ADMIN"),
+  authorize({
+    roles: ["ADMIN"]
+  }),
   companyReport
 );
 
 router.get(
   "/profit-summary",
-  authorizeRoles("ADMIN"),
+  authorize({
+    roles: ["ADMIN"]
+  }),
   profitSummary
 );
 

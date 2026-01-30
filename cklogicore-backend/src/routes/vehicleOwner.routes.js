@@ -6,7 +6,7 @@ import {
   toggleVehicle
 } from "../controllers/vehicleOwner.controller.js";
 import { authMiddleware } from "../middlewares/auth.middleware.js";
-import { checkPermission } from "../middlewares/accountPermission.middleware.js";
+import { authorize } from "../middlewares/authorize.middleware.js";
 import { ACCOUNT_TYPES } from "../constants/accountTypes.js";
 import { ROLES } from "../constants/roles.js";
 import { PERMISSIONS } from "../constants/permissions.js";
@@ -17,10 +17,10 @@ router.use(authMiddleware);
 
 router.post(
   "/",
-  checkPermission({
-    allowFor: [ACCOUNT_TYPES.SUPPLIER, ACCOUNT_TYPES.COMPANY],
-    allowedRoles: [ROLES.ADMIN, ROLES.STAFF],
-    requiredPermission: PERMISSIONS.ADD_VEHICLE,
+  authorize({
+    roles: ["ADMIN"],
+    accountTypes: ["VEHICLE"],
+    permissions: ["MASTER_VEHICLE_ADD"],
   }),
   createVehicle
 );
@@ -29,19 +29,19 @@ router.post(
 router.get("/", getVehicles);
 router.put(
   "/:id", 
-  checkPermission({
-    allowFor: [ACCOUNT_TYPES.SUPPLIER, ACCOUNT_TYPES.COMPANY],
-    allowedRoles: [ROLES.ADMIN, ROLES.STAFF],
-    requiredPermission: PERMISSIONS.ADD_VEHICLE,
+  authorize({
+    roles: ["ADMIN"],
+    accountTypes: ["VEHICLE"],
+    permissions: ["MASTER_VEHICLE_ADD"],
   }), 
   updateVehicle);
 // ✅ Toggle Active
 router.patch(
   "/:id/toggle",
-  checkPermission({
-    allowFor: [ACCOUNT_TYPES.SUPPLIER, ACCOUNT_TYPES.COMPANY],
-    allowedRoles: [ROLES.ADMIN, ROLES.STAFF],
-    requiredPermission: PERMISSIONS.ADD_VEHICLE,
+  authorize({
+    roles: ["ADMIN"],
+    accountTypes: ["VEHICLE"],
+    permissions: ["MASTER_VEHICLE_ADD"],
   }),
   toggleVehicle
 );

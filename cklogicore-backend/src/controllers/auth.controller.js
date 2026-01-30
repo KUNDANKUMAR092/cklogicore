@@ -48,10 +48,30 @@ export const login = async (req, res) => {
 
     // 1️⃣ Find user by email
     const user = await User.findOne({ email });
+    let userType = "ADMIN";
+
+    // If not admin, check staff
+    if (!user) {
+      user = await UserStaff.findOne({
+        email,
+        isDeleted: false
+      });
+
+      userType = "STAFF";
+    }
+
     if (!user) {
       return res.status(401).json({
         success: false,
         message: "Invalid credentials",
+      });
+    }
+
+    // Staff active check
+    if (userType === "STAFF" && !user.isActive) {
+      return res.status(403).json({
+        success: false,
+        message: "Your account is inactive"
       });
     }
 
@@ -69,7 +89,9 @@ export const login = async (req, res) => {
       {
         userId: user._id,
         accountId: user.accountId,
-        role: user.role,
+        role: userType === "ADMIN" ? user.role : "STAFF",
+        type: userType,
+        permissions: user.permissions || {}
       },
       process.env.JWT_SECRET,
       { expiresIn: "7d" }
@@ -78,13 +100,15 @@ export const login = async (req, res) => {
     res.status(200).json({
       success: true,
       token,
+      userType,
       user: {
         id: user._id,
         name: user.name,
         email: user.email,
-        role: user.role,
+        role: userType === "ADMIN" ? user.role : "STAFF",
         accountId: user.accountId,
-      },
+        permissions: user.permissions || {}
+      }
     });
 
   } catch (error) {
@@ -95,66 +119,6 @@ export const login = async (req, res) => {
     });
   }
 };
-// export const login = async (req, res) => {
-//   try {
-
-//     const { email, password, accountId } = req.body;
-
-//     // Account safe user
-//     const user = await User.findOne({ email, accountId });
-
-//     if (!user) {
-//       return res.status(401).json({
-//         success: false,
-//         message: "Invalid credentials User"
-//       });
-//     }
-
-//     const isMatch = await bcrypt.compare(password, user.password);
-
-//     if (!isMatch) {
-//       return res.status(401).json({
-//         success: false,
-//         message: "Invalid credentials Password"
-//       });
-//     }
-
-
-//     const accessToken = generateAccessToken(user);
-//     const refreshToken = generateRefreshToken(user);
-
-
-//     // Save refresh token
-//     await RefreshToken.create({
-//       userId: user._id,
-//       accountId: user.accountId,
-//       token: refreshToken,
-//       expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
-//     });
-
-
-//     res.status(200).json({
-//       success: true,
-//       accessToken,
-//       refreshToken,
-//       user: {
-//         id: user._id,
-//         name: user.name,
-//         role: user.role,
-//         accountId: user.accountId
-//       }
-//     });
-
-//   } catch (err) {
-//     console.error(err);
-
-//     res.status(500).json({
-//       success: false,
-//       message: "Login failed"
-//     });
-//   }
-// };
-
 
 
 /**
@@ -240,25 +204,6 @@ export const logout = async (req, res) => {
   }
 };
 
-// export const logout = async (req, res) => {
-//   try {
-
-//     const { refreshToken } = req.body;
-
-//     await RefreshToken.deleteOne({ token: refreshToken });
-
-//     res.json({
-//       success: true,
-//       message: "Logged out"
-//     });
-
-//   } catch (err) {
-//     res.status(500).json({
-//       success: false,
-//       message: "Logout failed"
-//     });
-//   }
-// };
 /**
  * =========================
  * FORGOT PASSWORD
@@ -307,7 +252,6 @@ export const forgotPassword = async (req, res) => {
     });
   }
 };
-
 
 
 /**
@@ -362,37 +306,4 @@ export const resetPassword = async (req, res) => {
     });
   }
 };
-
-
-// export const forgotPassword = async (req, res) => {
-//   try {
-//     const { email } = req.body;
-
-//     const token = await forgotPasswordService(email);
-
-//     res.json({
-//       success: true,
-//       message: "Reset token generated",
-//       resetToken: token,
-//     });
-//   } catch (error) {
-//     res.status(400).json({ message: error.message });
-//   }
-// };
-
-// export const resetPassword = async (req, res) => {
-//   try {
-//     const { token, newPassword } = req.body;
-
-//     await resetPasswordService(token, newPassword);
-
-//     res.json({
-//       success: true,
-//       message: "Password reset successful",
-//     });
-//   } catch (error) {
-//     res.status(400).json({ message: error.message });
-//   }
-// };
-
 

@@ -9,26 +9,62 @@ import {
   recalculateTripProfit
 } from "../controllers/trip.controller.js";
 import { authMiddleware } from "../middlewares/auth.middleware.js";
-import { authorizeRoles } from "../middlewares/role.middleware.js";
+import { authorize } from "../middlewares/authorize.middleware.js";
+
 
 const router = express.Router();
 
 router.use(authMiddleware);
 
 // Trips
-router.get("/", getTrips);
-router.post("/", authorizeRoles("ADMIN", "STAFF"), addTrip);
+router.get(
+  "/", 
+  getTrips
+);
 
-router.put("/:id", authorizeRoles("ADMIN"), updateTrip);
-router.patch("/:id/toggle", authorizeRoles("ADMIN"), toggleTrip);
+router.post(
+  "/", 
+  authorize({
+    roles: ["ADMIN", "STAFF"]
+  }), 
+  addTrip
+);
+
+router.put(
+  "/:id", 
+  authorize({
+    roles: ["ADMIN"]
+  }),
+  updateTrip
+);
+
+router.patch(
+  "/:id/toggle", 
+  authorize({
+    roles: ["ADMIN"]
+  }),
+  toggleTrip
+);
 
 // Advance Payment
-router.post("/advance", authorizeRoles("ADMIN", "STAFF"), addAdvancePayment);
-router.get("/advance", getAdvancePayments);
+router.post(
+  "/advance", 
+  authorize({
+    roles: ["ADMIN", "STAFF"]
+  }), 
+  addAdvancePayment 
+);
+
+router.get(
+  "/advance", 
+  getAdvancePayments
+);
 
 router.put(
   "/:id/recalculate-profit",
-  authorizeRoles("ADMIN"),
+  authorize({
+    roles: ["ADMIN"]
+  }),
   recalculateTripProfit
 );
 

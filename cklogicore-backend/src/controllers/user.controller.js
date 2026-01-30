@@ -1,3 +1,5 @@
+// src/controller/userModel.controller.js
+
 import User from "../models/user.model.js";
 import bcrypt from "bcryptjs";
 import { ROLES } from "../constants/roles.js";
@@ -141,66 +143,3 @@ export const deleteUser = async (req, res) => {
     });
   }
 };
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// export const createUser = async (req, res) => {
-//   try {
-//     const { name, email, password, role } = req.body;
-
-//     // ❌ Staff hi create ho sakta hai
-//     if (role !== ROLES.STAFF) {
-//       return res.status(400).json({
-//         message: "Only STAFF users can be created",
-//       });
-//     }
-
-//     // 🔐 Same tenant
-//     const hashedPassword = await bcrypt.hash(password, 10);
-
-//     const user = await User.create({
-//       name,
-//       email,
-//       password: hashedPassword,
-//       role,
-//       accountId: req.user.accountId,
-//       accountType: req.user.accountType,
-//     });
-
-//     res.status(201).json({
-//       message: "Staff user created successfully",
-//       userId: user._id,
-//     });
-
-//   } catch (error) {
-//     console.error("CREATE USER ERROR:", error);
-//     res.status(500).json({
-//       message: error.message || "Internal Server Error",
-//     });
-//   }
-// };
-
-// export const getUsers = async (req, res) => {
-//   try {
-//     const users = await User.find({
-//       accountId: req.user.accountId,
-//     }).select("-password");
-
-//     res.status(200).json(users);
-//   } catch (error) {
-//     res.status(500).json({
-//       message: "Failed to fetch users",
-//     });
-//   }
-// };
