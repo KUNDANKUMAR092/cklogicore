@@ -2,35 +2,68 @@ import express from "express";
 import * as tripCtrl from "../controllers/trip.controller.js";
 import { authMiddleware } from "../middlewares/auth.middleware.js";
 import { authorize } from "../middlewares/authorize.middleware.js";
-import { audit } from "../middlewares/audit.middleware.js";
+import { upload } from "../middlewares/upload.middleware.js";
 
 const router = express.Router();
 
 router.use(authMiddleware);
 
 router.route("/")
-  .get(tripCtrl.getTrips)
+  .get(tripCtrl.getTrips) // Contains Filter + Pagination + Summary Logic
   .post(
-    authorize({ module: "MANAGE_TRIPS", action: "true" }), // Check permission
-    audit("CREATE_TRIP", "TRIP"),
+    authorize({ module: "MANAGE_TRIPS", action: "true" }),
+    upload.array("challans", 10), 
     tripCtrl.createTrip
   );
 
 router.route("/:id")
-  .patch(
-    authorize({ module: "MANAGE_TRIPS", action: "true" }),
-    audit("UPDATE_TRIP", "TRIP"),
-    tripCtrl.updateTrip
-  )
-  .delete(
-    authorize({ roles: ["OWNER"] }), // Delete only by Owner
-    audit("DELETE_TRIP", "TRIP"),
-    tripCtrl.deleteTrip
-  );
+  .patch(authorize({ module: "MANAGE_TRIPS", action: "true" }), tripCtrl.updateTrip)
+  .delete(authorize({ roles: ["OWNER"] }), tripCtrl.deleteTrip);
 
 router.patch("/:id/toggle-status", tripCtrl.toggleTripStatus);
 
 export default router;
+
+
+
+
+
+
+
+
+// import express from "express";
+// import * as tripCtrl from "../controllers/trip.controller.js";
+// import { authMiddleware } from "../middlewares/auth.middleware.js";
+// import { authorize } from "../middlewares/authorize.middleware.js";
+// import { audit } from "../middlewares/audit.middleware.js";
+
+// const router = express.Router();
+
+// router.use(authMiddleware);
+
+// router.route("/")
+//   .get(tripCtrl.getTrips)
+//   .post(
+//     authorize({ module: "MANAGE_TRIPS", action: "true" }), // Check permission
+//     audit("CREATE_TRIP", "TRIP"),
+//     tripCtrl.createTrip
+//   );
+
+// router.route("/:id")
+//   .patch(
+//     authorize({ module: "MANAGE_TRIPS", action: "true" }),
+//     audit("UPDATE_TRIP", "TRIP"),
+//     tripCtrl.updateTrip
+//   )
+//   .delete(
+//     authorize({ roles: ["OWNER"] }), // Delete only by Owner
+//     audit("DELETE_TRIP", "TRIP"),
+//     tripCtrl.deleteTrip
+//   );
+
+// router.patch("/:id/toggle-status", tripCtrl.toggleTripStatus);
+
+// export default router;
 
 
 

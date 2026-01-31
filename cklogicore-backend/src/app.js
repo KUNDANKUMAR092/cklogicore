@@ -6,13 +6,17 @@ import cors from "cors";
 
 // routes
 import authRoutes from "./routes/auth.routes.js";
-import staffRoutes from "./routes/userStaff.routes.js";
+import profileRoutes from "./routes/profile.routes.js";
+import staffRoutes from "./routes/staff.routes.js";
+
+import userStaffRoutes from "./routes/userStaff.routes.js";
+
+import dashboardRoutes from "./routes/dashboard.routes.js";
 import supplierOwnerRoutes from "./routes/supplierOwner.routes.js";
 import companyOwnerRoutes from "./routes/companyOwner.routes.js";
 import vehicleOwnerRoutes from "./routes/vehicleOwner.routes.js";
 import tripRoutes from "./routes/trip.routes.js";
 import excelRoutes from "./routes/excel.routes.js";
-import userRoutes from "./routes/user.routes.js";
 import reportRoutes from "./routes/report.routes.js";
 
 import helmet from "helmet";
@@ -25,6 +29,7 @@ const app = express();
 app.use(helmet());
 app.use(cookieParser());
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 app.use(morgan("dev"));
 
 // ✅ CORS Configuration
@@ -43,8 +48,12 @@ app.use(cors({
 
 // 🌍 Base URL Routes
 app.use("/api/v1/auth", authRoutes);
+app.use("/api/v1/profile", profileRoutes);
 app.use("/api/v1/staff", staffRoutes);
-// app.use("/api/v1/users", userRoutes);
+
+app.use("/api/v1/user-staff", userStaffRoutes);
+
+app.use("/api/v1/dashboard", dashboardRoutes);
 app.use("/api/v1/suppliers", supplierOwnerRoutes);
 app.use("/api/v1/companies", companyOwnerRoutes);
 app.use("/api/v1/vehicles", vehicleOwnerRoutes);

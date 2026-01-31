@@ -1,4 +1,6 @@
 import Trip from "../models/trip.model.js";
+import { ACCOUNT_TYPES } from "../constants/accountTypes.js";
+import mongoose from "mongoose";
 
 const catchAsync = (fn) => (req, res, next) => {
   Promise.resolve(fn(req, res, next)).catch(next);
@@ -6,8 +8,27 @@ const catchAsync = (fn) => (req, res, next) => {
 
 // 1. CREATE TRIP
 export const createTrip = catchAsync(async (req, res) => {
+  const { accountType } = req.user;
+  let bodyData = { ...req.body };
+
+  // Parse JSON from FormData
+  if (typeof bodyData.rates === 'string') bodyData.rates = JSON.parse(bodyData.rates);
+  if (typeof bodyData.financials === 'string') bodyData.financials = JSON.parse(bodyData.financials);
+
+  // 🛡️ Rate Masking
+  if (accountType === ACCOUNT_TYPES.SUPPLIER) delete bodyData.rates.supplierRatePerTon;
+  else if (accountType === ACCOUNT_TYPES.COMPANY) delete bodyData.rates.companyRatePerTon;
+  else if (accountType === ACCOUNT_TYPES.VEHICLE) delete bodyData.rates.vehicleRatePerTon;
+
+  // Multiple Challan handling
+  const challanFiles = req.files ? req.files.map(f => ({
+    fileUrl: f.path,
+    fileName: f.originalname
+  })) : [];
+
   const trip = await Trip.create({
-    ...req.body,
+    ...bodyData,
+    challans: challanFiles,
     accountId: req.user.accountId,
     createdByUserId: req.user.userId
   });
@@ -15,64 +36,335 @@ export const createTrip = catchAsync(async (req, res) => {
   res.status(201).json({ success: true, data: trip });
 });
 
-// 2. GET ALL TRIPS (With Pagination & Filters)
+// 2. GET TRIPS (With UI-level Summary & Global Search)
 export const getTrips = catchAsync(async (req, res) => {
-  const { page = 1, limit = 10, status, search } = req.query;
-  const query = { accountId: req.user.accountId, isDeleted: false };
+  const { page = 1, limit = 10, status, search, startDate, endDate, companyId, vehicleId } = req.query;
+  const { accountId, accountType } = req.user;
 
+  // Query Construction
+  const query = { accountId: new mongoose.Types.ObjectId(accountId), isDeleted: false };
+  
   if (status) query.status = status;
+  if (companyId) query.companyId = new mongoose.Types.ObjectId(companyId);
+  if (vehicleId) query.vehicleId = new mongoose.Types.ObjectId(vehicleId);
+  if (startDate && endDate) {
+    query.tripDate = { $gte: new Date(startDate), $lte: new Date(endDate) };
+  }
+
+  // Global Search logic
   if (search) {
     query.$or = [
+      { tripId: { $regex: search, $options: "i" } },
       { loadingPoint: { $regex: search, $options: "i" } },
       { unloadingPoint: { $regex: search, $options: "i" } }
     ];
   }
 
-  const [total, trips] = await Promise.all([
+  // 🔥 Total Summary Calculation based on Filters (UI Totals)
+  const summary = await Trip.aggregate([
+    { $match: query },
+    {
+      $group: {
+        _id: null,
+        totalProfit: { $sum: "$totalFinancials.profitPerTrip" },
+        totalAmountForCompany: { $sum: "$totalFinancials.totalAmountForCompany" },
+        totalAmountForVehicle: { $sum: "$totalFinancials.totalAmountForVehicle" },
+        totalAmountForSupplier: { $sum: "$totalFinancials.totalAmountForSupplier" }
+      }
+    }
+  ]);
+
+  // Paginated List
+  const [totalRecords, trips] = await Promise.all([
     Trip.countDocuments(query),
     Trip.find(query)
-      .populate("supplierId", "name mobile")
-      .populate("companyId", "name mobile")
-      .populate("vehicleId", "vehicleNumber")
+      .populate("supplierId companyId vehicleId", "name mobile vehicleNumber")
       .skip((page - 1) * limit)
       .limit(Number(limit))
       .sort({ createdAt: -1 })
+      .lean()
   ]);
 
-  res.json({ success: true, total, data: trips });
+  // Response Masking
+  const totals = summary[0] || { totalProfit: 0, totalAmountForCompany: 0, totalAmountForVehicle: 0, totalAmountForSupplier: 0 };
+  
+  if (accountType === ACCOUNT_TYPES.SUPPLIER) delete totals.totalAmountForSupplier;
+  else if (accountType === ACCOUNT_TYPES.COMPANY) delete totals.totalAmountForCompany;
+  else if (accountType === ACCOUNT_TYPES.VEHICLE) delete totals.totalAmountForVehicle;
+
+  res.json({
+    success: true,
+    pagination: {
+      totalRecords,
+      currentPage: Number(page),
+      totalPages: Math.ceil(totalRecords / limit)
+    },
+    summary: totals, // This is the 'totalProfit' and other totals for UI
+    data: trips
+  });
 });
 
 // 3. UPDATE TRIP
 export const updateTrip = catchAsync(async (req, res) => {
-  const trip = await Trip.findOneAndUpdate(
-    { _id: req.params.id, accountId: req.user.accountId, isDeleted: false },
-    { $set: req.body },
-    { new: true, runValidators: true }
-  );
-
-  if (!trip) return res.status(404).json({ message: "Trip not found" });
-  res.json({ success: true, data: trip });
-});
-
-// 4. TOGGLE STATUS (Active/Inactive)
-export const toggleTripStatus = catchAsync(async (req, res) => {
+  if (typeof req.body.rates === 'string') req.body.rates = JSON.parse(req.body.rates);
+  
   const trip = await Trip.findOne({ _id: req.params.id, accountId: req.user.accountId });
   if (!trip) return res.status(404).json({ message: "Trip not found" });
 
-  trip.isActive = !trip.isActive;
-  await trip.save();
-  res.json({ success: true, message: `Trip ${trip.isActive ? "Activated" : "Deactivated"}` });
+  Object.assign(trip, req.body);
+  await trip.save(); // 🔥 Re-calculates profitPerTrip
+  
+  res.json({ success: true, message: "Trip updated", data: trip });
 });
 
-// 5. SOFT DELETE
+// 4. SOFT DELETE
 export const deleteTrip = catchAsync(async (req, res) => {
   const trip = await Trip.findOneAndUpdate(
     { _id: req.params.id, accountId: req.user.accountId },
-    { isDeleted: true, deletedAt: new Date() }
+    { isDeleted: true, status: "cancelled", deletedAt: new Date() },
+    { new: true }
   );
   if (!trip) return res.status(404).json({ message: "Trip not found" });
-  res.json({ success: true, message: "Trip deleted successfully" });
+  res.json({ success: true, message: "Trip deleted" });
 });
+
+// 5. TOGGLE STATUS
+export const toggleTripStatus = catchAsync(async (req, res) => {
+  const trip = await Trip.findOne({ _id: req.params.id, accountId: req.user.accountId });
+  if (!trip) return res.status(404).json({ message: "Trip not found" });
+  trip.isActive = !trip.isActive;
+  await trip.save();
+  res.json({ success: true, message: `Trip status updated to ${trip.isActive}` });
+});
+
+
+
+
+
+
+
+
+
+// import Trip from "../models/trip.model.js";
+// import { ACCOUNT_TYPES } from "../constants/accountTypes.js";
+
+// const catchAsync = (fn) => (req, res, next) => {
+//   Promise.resolve(fn(req, res, next)).catch(next);
+// };
+
+// // 1. CREATE TRIP (With Rate Masking & Multiple Challans)
+// export const createTrip = catchAsync(async (req, res) => {
+//   const { accountType } = req.user;
+  
+//   // Data parsing for Multipart Form Data
+//   // Note: Frontend se rates ko JSON.stringify karke bhejna ya rates.key format use karna
+//   let rates = req.body.rates ? (typeof req.body.rates === 'string' ? JSON.parse(req.body.rates) : req.body.rates) : {};
+//   let financials = req.body.financials ? (typeof req.body.financials === 'string' ? JSON.parse(req.body.financials) : req.body.financials) : {};
+
+//   // 🛡️ Rate Masking: Jo account type khud hai, wo apna rate input nahi karega
+//   if (accountType === ACCOUNT_TYPES.SUPPLIER) {
+//     delete rates.supplierRatePerTon; 
+//   } else if (accountType === ACCOUNT_TYPES.COMPANY) {
+//     delete rates.companyRatePerTon;
+//   } else if (accountType === ACCOUNT_TYPES.VEHICLE) {
+//     delete rates.vehicleRatePerTon;
+//   }
+
+//   // Files handling (Multiple Challans)
+//   const challanFiles = req.files ? req.files.map(file => ({
+//     fileUrl: file.path,
+//     fileName: file.originalname
+//   })) : [];
+
+//   const trip = await Trip.create({
+//     ...req.body,
+//     rates,
+//     financials,
+//     challans: challanFiles,
+//     accountId: req.user.accountId,
+//     createdByUserId: req.user.userId
+//   });
+
+//   res.status(201).json({ 
+//     success: true, 
+//     message: "Trip created successfully", 
+//     data: trip 
+//   });
+// });
+
+// // 2. GET ALL TRIPS (With Pagination, Search & Population)
+// export const getTrips = catchAsync(async (req, res) => {
+//   const { page = 1, limit = 10, status, search } = req.query;
+//   const query = { accountId: req.user.accountId, isDeleted: false };
+
+//   if (status) query.status = status;
+//   if (search) {
+//     query.$or = [
+//       { loadingPoint: { $regex: search, $options: "i" } },
+//       { unloadingPoint: { $regex: search, $options: "i" } },
+//       { tripId: { $regex: search, $options: "i" } }
+//     ];
+//   }
+
+//   const [total, trips] = await Promise.all([
+//     Trip.countDocuments(query),
+//     Trip.find(query)
+//       .populate("supplierId", "name mobile")
+//       .populate("companyId", "name mobile")
+//       .populate("vehicleId", "vehicleNumber")
+//       .skip((page - 1) * limit)
+//       .limit(Number(limit))
+//       .sort({ createdAt: -1 })
+//       .lean()
+//   ]);
+
+//   res.json({ 
+//     success: true, 
+//     total, 
+//     pages: Math.ceil(total / limit),
+//     data: trips 
+//   });
+// });
+
+// // 3. UPDATE TRIP (Recalculates Profit via Mongoose Middleware)
+// export const updateTrip = catchAsync(async (req, res) => {
+//   const { id } = req.params;
+  
+//   // Body parsing check for update
+//   if (req.body.rates && typeof req.body.rates === 'string') req.body.rates = JSON.parse(req.body.rates);
+//   if (req.body.financials && typeof req.body.financials === 'string') req.body.financials = JSON.parse(req.body.financials);
+
+//   const trip = await Trip.findOneAndUpdate(
+//     { _id: id, accountId: req.user.accountId, isDeleted: false },
+//     { $set: req.body },
+//     { new: true, runValidators: true }
+//   );
+
+//   if (!trip) return res.status(404).json({ success: false, message: "Trip not found" });
+
+//   res.json({ 
+//     success: true, 
+//     message: "Trip updated successfully", 
+//     data: trip 
+//   });
+// });
+
+// // 4. TOGGLE STATUS (Active/Inactive)
+// export const toggleTripStatus = catchAsync(async (req, res) => {
+//   const trip = await Trip.findOne({ _id: req.params.id, accountId: req.user.accountId });
+  
+//   if (!trip) return res.status(404).json({ message: "Trip not found" });
+
+//   trip.isActive = !trip.isActive;
+//   await trip.save();
+
+//   res.json({ 
+//     success: true, 
+//     message: `Trip is now ${trip.isActive ? "Active" : "Inactive"}` 
+//   });
+// });
+
+// // 5. SOFT DELETE
+// export const deleteTrip = catchAsync(async (req, res) => {
+//   const trip = await Trip.findOneAndUpdate(
+//     { _id: req.params.id, accountId: req.user.accountId },
+//     { 
+//       isDeleted: true, 
+//       deletedAt: new Date(),
+//       status: "cancelled" 
+//     }
+//   );
+
+//   if (!trip) return res.status(404).json({ message: "Trip not found" });
+
+//   res.json({ 
+//     success: true, 
+//     message: "Trip deleted successfully" 
+//   });
+// });
+
+
+
+
+
+
+
+
+// import Trip from "../models/trip.model.js";
+
+// const catchAsync = (fn) => (req, res, next) => {
+//   Promise.resolve(fn(req, res, next)).catch(next);
+// };
+
+// // 1. CREATE TRIP
+// export const createTrip = catchAsync(async (req, res) => {
+//   const trip = await Trip.create({
+//     ...req.body,
+//     accountId: req.user.accountId,
+//     createdByUserId: req.user.userId
+//   });
+
+//   res.status(201).json({ success: true, data: trip });
+// });
+
+// // 2. GET ALL TRIPS (With Pagination & Filters)
+// export const getTrips = catchAsync(async (req, res) => {
+//   const { page = 1, limit = 10, status, search } = req.query;
+//   const query = { accountId: req.user.accountId, isDeleted: false };
+
+//   if (status) query.status = status;
+//   if (search) {
+//     query.$or = [
+//       { loadingPoint: { $regex: search, $options: "i" } },
+//       { unloadingPoint: { $regex: search, $options: "i" } }
+//     ];
+//   }
+
+//   const [total, trips] = await Promise.all([
+//     Trip.countDocuments(query),
+//     Trip.find(query)
+//       .populate("supplierId", "name mobile")
+//       .populate("companyId", "name mobile")
+//       .populate("vehicleId", "vehicleNumber")
+//       .skip((page - 1) * limit)
+//       .limit(Number(limit))
+//       .sort({ createdAt: -1 })
+//   ]);
+
+//   res.json({ success: true, total, data: trips });
+// });
+
+// // 3. UPDATE TRIP
+// export const updateTrip = catchAsync(async (req, res) => {
+//   const trip = await Trip.findOneAndUpdate(
+//     { _id: req.params.id, accountId: req.user.accountId, isDeleted: false },
+//     { $set: req.body },
+//     { new: true, runValidators: true }
+//   );
+
+//   if (!trip) return res.status(404).json({ message: "Trip not found" });
+//   res.json({ success: true, data: trip });
+// });
+
+// // 4. TOGGLE STATUS (Active/Inactive)
+// export const toggleTripStatus = catchAsync(async (req, res) => {
+//   const trip = await Trip.findOne({ _id: req.params.id, accountId: req.user.accountId });
+//   if (!trip) return res.status(404).json({ message: "Trip not found" });
+
+//   trip.isActive = !trip.isActive;
+//   await trip.save();
+//   res.json({ success: true, message: `Trip ${trip.isActive ? "Activated" : "Deactivated"}` });
+// });
+
+// // 5. SOFT DELETE
+// export const deleteTrip = catchAsync(async (req, res) => {
+//   const trip = await Trip.findOneAndUpdate(
+//     { _id: req.params.id, accountId: req.user.accountId },
+//     { isDeleted: true, deletedAt: new Date() }
+//   );
+//   if (!trip) return res.status(404).json({ message: "Trip not found" });
+//   res.json({ success: true, message: "Trip deleted successfully" });
+// });
 
 
 

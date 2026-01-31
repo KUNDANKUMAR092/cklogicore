@@ -6,51 +6,110 @@ export const authorize = ({
   module = null,
   action = null
 } = {}) => {
-
   return (req, res, next) => {
     try {
-
       const user = req.user;
-
-      if (!user) {
-        return res.status(401).json({ message: "Unauthorized" });
-      }
+      if (!user) return res.status(401).json({ message: "Unauthorized" });
 
       const { role, accountType, permissions } = user;
 
-      /* OWNER = FULL ACCESS */
-      if (role === "OWNER") {
-        return next();
-      }
+      /* 1. OWNER = FULL ACCESS */
+      if (role === "OWNER") return next();
 
-      /* ROLE CHECK */
+      /* 2. ROLE CHECK */
       if (roles.length && !roles.includes(role)) {
-        return res.status(403).json({ message: "Role not allowed" });
+        return res.status(403).json({ message: "Access denied: Invalid role" });
       }
 
-      /* ACCOUNT TYPE CHECK */
+      /* 3. ACCOUNT TYPE CHECK */
       if (accountTypes.length && !accountTypes.includes(accountType)) {
         return res.status(403).json({ message: "Account type not allowed" });
       }
 
-      /* STAFF PERMISSION CHECK */
+      /* 4. STAFF PERMISSION CHECK */
+      // Staff permissions humne authMiddleware mein req.user.permissions mein attach ki hain
       if (module && action) {
-
-        const allowed = permissions?.[module]?.[action];
-
-        if (!allowed) {
-          return res.status(403).json({ message: "Permission denied" });
+        // Staff model mein permissions: { canManageTrips: true } jaise fields hain
+        const hasPermission = permissions[module] === true || permissions[module] === action;
+        
+        if (!hasPermission) {
+          return res.status(403).json({ message: `Access denied: Permission for ${module} required` });
         }
       }
 
       next();
-
     } catch (err) {
       console.error("Authorize Error:", err);
       res.status(500).json({ message: "Authorization failed" });
     }
   };
 };
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// export const authorize = ({
+//   roles = [],
+//   accountTypes = [],
+//   module = null,
+//   action = null
+// } = {}) => {
+
+//   return (req, res, next) => {
+//     try {
+
+//       const user = req.user;
+
+//       if (!user) {
+//         return res.status(401).json({ message: "Unauthorized" });
+//       }
+
+//       const { role, accountType, permissions } = user;
+
+//       /* OWNER = FULL ACCESS */
+//       if (role === "OWNER") {
+//         return next();
+//       }
+
+//       /* ROLE CHECK */
+//       if (roles.length && !roles.includes(role)) {
+//         return res.status(403).json({ message: "Role not allowed" });
+//       }
+
+//       /* ACCOUNT TYPE CHECK */
+//       if (accountTypes.length && !accountTypes.includes(accountType)) {
+//         return res.status(403).json({ message: "Account type not allowed" });
+//       }
+
+//       /* STAFF PERMISSION CHECK */
+//       if (module && action) {
+
+//         const allowed = permissions?.[module]?.[action];
+
+//         if (!allowed) {
+//           return res.status(403).json({ message: "Permission denied" });
+//         }
+//       }
+
+//       next();
+
+//     } catch (err) {
+//       console.error("Authorize Error:", err);
+//       res.status(500).json({ message: "Authorization failed" });
+//     }
+//   };
+// };
 
 
 

@@ -1,56 +1,115 @@
 // middlewares/auth.middleware.js
 
 import jwt from "jsonwebtoken";
-import User from "../models/user.model.js";
 import Account from "../models/account.model.js";
+import Staff from "../models/staff.model.js";
 
 export const authMiddleware = async (req, res, next) => {
   try {
-
     const authHeader = req.headers.authorization;
-
     if (!authHeader?.startsWith("Bearer ")) {
       return res.status(401).json({ message: "Unauthorized" });
     }
 
     const token = authHeader.split(" ")[1];
-
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = jwt.verify(token, process.env.JWT_ACCESS_SECRET);
 
     if (!decoded?.accountId || !decoded?.userId) {
-      return res.status(401).json({ message: "Invalid token" });
+      return res.status(401).json({ message: "Invalid token structure" });
     }
 
-    /* Load User */
-    const user = await User.findById(decoded.userId).lean();
-
-    if (!user || String(user.accountId) !== decoded.accountId) {
-      return res.status(401).json({ message: "Invalid token" });
+    // Dynamic User Check: Staff hai ya Owner?
+    let user;
+    if (decoded.accountType === "STAFF") {
+      user = await Staff.findById(decoded.userId).lean();
+    } else {
+      user = await Account.findById(decoded.userId).lean();
     }
 
-    /* Load Account */
-    const account = await Account.findById(decoded.accountId).lean();
-
-    if (!account) {
-      return res.status(401).json({ message: "Invalid account" });
+    if (!user || !user.isActive) {
+      return res.status(401).json({ message: "User not found or inactive" });
     }
 
-    /* Standard User Object */
+    /* Standard req.user Object */
     req.user = {
       userId: user._id,
-      accountId: user.accountId,
+      accountId: decoded.accountId, // Token se main business ID
       role: user.role,
-      permissions: user.permissions || {},
-      accountType: account.accountType
+      permissions: user.permissions || {}, // Staff ke liye permissions, Owner ke liye empty
+      accountType: decoded.accountType
     };
 
     next();
-
   } catch (err) {
     console.error("Auth Error:", err);
     return res.status(401).json({ message: "Unauthorized" });
   }
 };
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// import jwt from "jsonwebtoken";
+// import User from "../models/user.model.js";
+// import Account from "../models/account.model.js";
+
+// export const authMiddleware = async (req, res, next) => {
+//   try {
+
+//     const authHeader = req.headers.authorization;
+
+//     if (!authHeader?.startsWith("Bearer ")) {
+//       return res.status(401).json({ message: "Unauthorized" });
+//     }
+
+//     const token = authHeader.split(" ")[1];
+
+//     const decoded = jwt.verify(token, process.env.JWT_ACCESS_SECRET);
+
+//     if (!decoded?.accountId || !decoded?.userId) {
+//       return res.status(401).json({ message: "Invalid token" });
+//     }
+
+//     /* Load User */
+//     const user = await User.findById(decoded.userId).lean();
+
+//     if (!user || String(user.accountId) !== decoded.accountId) {
+//       return res.status(401).json({ message: "Invalid token" });
+//     }
+
+//     /* Load Account */
+//     const account = await Account.findById(decoded.accountId).lean();
+
+//     if (!account) {
+//       return res.status(401).json({ message: "Invalid account" });
+//     }
+
+//     /* Standard User Object */
+//     req.user = {
+//       userId: user._id,
+//       accountId: user.accountId,
+//       role: user.role,
+//       permissions: user.permissions || {},
+//       accountType: account.accountType
+//     };
+
+//     next();
+
+//   } catch (err) {
+//     console.error("Auth Error:", err);
+//     return res.status(401).json({ message: "Unauthorized" });
+//   }
+// };
 
 
 
