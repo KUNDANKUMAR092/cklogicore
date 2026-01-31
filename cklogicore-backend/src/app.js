@@ -1,4 +1,5 @@
 // src/app.js
+
 import express from "express";
 import morgan from "morgan";
 import cors from "cors";
@@ -14,16 +15,20 @@ import excelRoutes from "./routes/excel.routes.js";
 import userRoutes from "./routes/user.routes.js";
 import reportRoutes from "./routes/report.routes.js";
 
+import helmet from "helmet";
+import cookieParser from "cookie-parser";
+import { errorHandler } from "./middlewares/error.middleware.js";
 
 const app = express();
 
-// 🌐 Middlewares
-// app.use(cors());
-const allowedOrigins = [
-  "http://localhost:5174",
-  "http://localhost:5173"
-];
+// Security & Parsing
+app.use(helmet());
+app.use(cookieParser());
+app.use(express.json());
+app.use(morgan("dev"));
 
+// ✅ CORS Configuration
+const allowedOrigins = ["http://localhost:5174", "http://localhost:5173"];
 app.use(cors({
   origin: function (origin, callback) {
     if (!origin || allowedOrigins.includes(origin)) {
@@ -32,14 +37,13 @@ app.use(cors({
       callback(new Error("Not allowed by CORS"));
     }
   },
-  credentials: true
+  credentials: true // Refresh token cookie 
 }));
-app.use(express.json());
-app.use(morgan("dev"));
 
-// 🌍 Base URL
+
+// 🌍 Base URL Routes
 app.use("/api/v1/auth", authRoutes);
-app.use("/api/staff", staffRoutes);
+app.use("/api/v1/staff", staffRoutes);
 // app.use("/api/v1/users", userRoutes);
 app.use("/api/v1/suppliers", supplierOwnerRoutes);
 app.use("/api/v1/companies", companyOwnerRoutes);
@@ -48,10 +52,85 @@ app.use("/api/v1/trips", tripRoutes);
 app.use("/api/v1/excel", excelRoutes);
 app.use("/api/v1/reports", reportRoutes);
 
-
-// ❗ 404 handler
-app.use((req, res) => {
-  res.status(404).json({ message: "Route not found" });
+// ❗ 404 handler 
+app.use((req, res, next) => {
+  const error = new Error("Route not found");
+  error.statusCode = 404;
+  next(error); // Error middleware 
 });
 
+// ❗ Global Error Middleware 
+app.use(errorHandler);
+
 export default app;
+
+
+
+
+
+
+// import express from "express";
+// import morgan from "morgan";
+// import cors from "cors";
+
+// // routes
+// import authRoutes from "./routes/auth.routes.js";
+// import staffRoutes from "./routes/userStaff.routes.js";
+// import supplierOwnerRoutes from "./routes/supplierOwner.routes.js";
+// import companyOwnerRoutes from "./routes/companyOwner.routes.js";
+// import vehicleOwnerRoutes from "./routes/vehicleOwner.routes.js";
+// import tripRoutes from "./routes/trip.routes.js";
+// import excelRoutes from "./routes/excel.routes.js";
+// import userRoutes from "./routes/user.routes.js";
+// import reportRoutes from "./routes/report.routes.js";
+
+// import helmet from "helmet";
+// import cookieParser from "cookie-parser";
+
+
+
+
+// const app = express();
+
+// app.use(helmet());
+// app.use(cookieParser());
+
+
+// // 🌐 Middlewares
+// // app.use(cors());
+// const allowedOrigins = [
+//   "http://localhost:5174",
+//   "http://localhost:5173"
+// ];
+
+// app.use(cors({
+//   origin: function (origin, callback) {
+//     if (!origin || allowedOrigins.includes(origin)) {
+//       callback(null, true);
+//     } else {
+//       callback(new Error("Not allowed by CORS"));
+//     }
+//   },
+//   credentials: true
+// }));
+// app.use(express.json());
+// app.use(morgan("dev"));
+
+// // 🌍 Base URL
+// app.use("/api/v1/auth", authRoutes);
+// app.use("/api/v1/staff", staffRoutes);
+// // app.use("/api/v1/users", userRoutes);
+// app.use("/api/v1/suppliers", supplierOwnerRoutes);
+// app.use("/api/v1/companies", companyOwnerRoutes);
+// app.use("/api/v1/vehicles", vehicleOwnerRoutes);
+// app.use("/api/v1/trips", tripRoutes);
+// app.use("/api/v1/excel", excelRoutes);
+// app.use("/api/v1/reports", reportRoutes);
+
+
+// // ❗ 404 handler
+// app.use((req, res) => {
+//   res.status(404).json({ message: "Route not found" });
+// });
+
+// export default app;

@@ -2,6 +2,7 @@
 
 import jwt from "jsonwebtoken";
 import User from "../models/user.model.js";
+import Account from "../models/account.model.js";
 
 export const authMiddleware = async (req, res, next) => {
   try {
@@ -16,26 +17,31 @@ export const authMiddleware = async (req, res, next) => {
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-    if (!decoded?.accountId) {
+    if (!decoded?.accountId || !decoded?.userId) {
       return res.status(401).json({ message: "Invalid token" });
     }
 
-    const user = await User.findOne({
-      _id: decoded.id || decoded.userId,
-      accountId: decoded.accountId
-    }).lean(); // ⚡ faster
+    /* Load User */
+    const user = await User.findById(decoded.userId).lean();
 
-    if (!user) {
+    if (!user || String(user.accountId) !== decoded.accountId) {
       return res.status(401).json({ message: "Invalid token" });
     }
 
-    /* ✅ Standard user object */
+    /* Load Account */
+    const account = await Account.findById(decoded.accountId).lean();
+
+    if (!account) {
+      return res.status(401).json({ message: "Invalid account" });
+    }
+
+    /* Standard User Object */
     req.user = {
-      _id: user._id,
+      userId: user._id,
       accountId: user.accountId,
       role: user.role,
-      accountType: user.accountType,
-      permissions: user.permissions || {}
+      permissions: user.permissions || {},
+      accountType: account.accountType
     };
 
     next();
@@ -45,6 +51,73 @@ export const authMiddleware = async (req, res, next) => {
     return res.status(401).json({ message: "Unauthorized" });
   }
 };
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// import jwt from "jsonwebtoken";
+// import User from "../models/user.model.js";
+
+// export const authMiddleware = async (req, res, next) => {
+//   try {
+
+//     const authHeader = req.headers.authorization;
+
+//     if (!authHeader?.startsWith("Bearer ")) {
+//       return res.status(401).json({ message: "Unauthorized" });
+//     }
+
+//     const token = authHeader.split(" ")[1];
+
+//     const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+//     if (!decoded?.accountId) {
+//       return res.status(401).json({ message: "Invalid token" });
+//     }
+
+//     const user = await User.findOne({
+//       _id: decoded.id || decoded.userId,
+//       accountId: decoded.accountId
+//     }).lean(); // ⚡ faster
+
+//     if (!user) {
+//       return res.status(401).json({ message: "Invalid token" });
+//     }
+
+//     /* ✅ Standard user object */
+//     req.user = {
+//       _id: user._id,
+//       accountId: user.accountId,
+//       role: user.role,
+//       accountType: user.accountType,
+//       permissions: user.permissions || {}
+//     };
+
+//     next();
+
+//   } catch (err) {
+//     console.error("Auth Error:", err);
+//     return res.status(401).json({ message: "Unauthorized" });
+//   }
+// };
 
 
 

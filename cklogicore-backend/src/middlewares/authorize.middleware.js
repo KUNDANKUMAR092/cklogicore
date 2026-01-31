@@ -1,60 +1,129 @@
-import { ROLES } from "../constants/roles.js";
+// middlewares/authorize.middleware
 
 export const authorize = ({
   roles = [],
   accountTypes = [],
-  permissions = [],
+  module = null,
+  action = null
 } = {}) => {
 
   return (req, res, next) => {
     try {
+
       const user = req.user;
 
       if (!user) {
         return res.status(401).json({ message: "Unauthorized" });
       }
 
-      const { role, accountType } = user;
+      const { role, accountType, permissions } = user;
 
-      /* 🔥 ADMIN = FULL ACCESS */
-      if (role === ROLES.ADMIN) {
+      /* OWNER = FULL ACCESS */
+      if (role === "OWNER") {
         return next();
       }
 
-      /* ✅ ROLE CHECK */
+      /* ROLE CHECK */
       if (roles.length && !roles.includes(role)) {
-        return res.status(403).json({
-          message: "Role not allowed",
-        });
+        return res.status(403).json({ message: "Role not allowed" });
       }
 
-      /* ✅ ACCOUNT TYPE CHECK */
+      /* ACCOUNT TYPE CHECK */
       if (accountTypes.length && !accountTypes.includes(accountType)) {
-        return res.status(403).json({
-          message: "Account type not allowed",
-        });
+        return res.status(403).json({ message: "Account type not allowed" });
       }
 
-      /* ✅ PERMISSION CHECK (for staff) */
-      if (permissions.length) {
-        const hasPermission = permissions.some(
-          (p) => user.permissions?.[p] === true
-        );
+      /* STAFF PERMISSION CHECK */
+      if (module && action) {
 
-        if (!hasPermission) {
-          return res.status(403).json({
-            message: "Permission denied",
-          });
+        const allowed = permissions?.[module]?.[action];
+
+        if (!allowed) {
+          return res.status(403).json({ message: "Permission denied" });
         }
       }
 
       next();
+
     } catch (err) {
       console.error("Authorize Error:", err);
-      return res.status(500).json({ message: "Authorization failed" });
+      res.status(500).json({ message: "Authorization failed" });
     }
   };
 };
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// import { ROLES } from "../constants/roles.js";
+
+// export const authorize = ({
+//   roles = [],
+//   accountTypes = [],
+//   permissions = [],
+// } = {}) => {
+
+//   return (req, res, next) => {
+//     try {
+//       const user = req.user;
+
+//       if (!user) {
+//         return res.status(401).json({ message: "Unauthorized" });
+//       }
+
+//       const { role, accountType } = user;
+
+//       /* 🔥 ADMIN = FULL ACCESS */
+//       if (role === ROLES.ADMIN) {
+//         return next();
+//       }
+
+//       /* ✅ ROLE CHECK */
+//       if (roles.length && !roles.includes(role)) {
+//         return res.status(403).json({
+//           message: "Role not allowed",
+//         });
+//       }
+
+//       /* ✅ ACCOUNT TYPE CHECK */
+//       if (accountTypes.length && !accountTypes.includes(accountType)) {
+//         return res.status(403).json({
+//           message: "Account type not allowed",
+//         });
+//       }
+
+//       /* ✅ PERMISSION CHECK (for staff) */
+//       if (permissions.length) {
+//         const hasPermission = permissions.some(
+//           (p) => user.permissions?.[p] === true
+//         );
+
+//         if (!hasPermission) {
+//           return res.status(403).json({
+//             message: "Permission denied",
+//           });
+//         }
+//       }
+
+//       next();
+//     } catch (err) {
+//       console.error("Authorize Error:", err);
+//       return res.status(500).json({ message: "Authorization failed" });
+//     }
+//   };
+// };
 
 
 

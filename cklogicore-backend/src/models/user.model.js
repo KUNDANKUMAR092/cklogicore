@@ -1,13 +1,14 @@
-// src/models/user.model.js
+// src/models/userSchema.model.js
 
 import mongoose from "mongoose";
-import crypto from "crypto";
-import { ROLES } from "../constants/roles.js";
-import { ACCOUNT_TYPES } from "../constants/accountTypes.js";
+
+/**
+ * Users inside Account
+ * Only ONE OWNER per account
+ */
 
 const userSchema = new mongoose.Schema(
   {
-    // 🔐 Account isolation
     accountId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Account",
@@ -15,58 +16,54 @@ const userSchema = new mongoose.Schema(
       index: true
     },
 
-    // 🔥 WHOSE SYSTEM (SUPPLIER / COMPANY / VEHICLE)
-    accountType: {
+    name: {
       type: String,
-      enum: Object.values(ACCOUNT_TYPES),
       required: true
     },
 
-    // 👤 USER INFO
-    name: { type: String, required: true },
-    email: { type: String, unique: true, required: true },
-    password: { type: String, required: true },
+    email: {
+      type: String,
+      required: true,
+      lowercase: true
+    },
 
-    // 🔥 WHAT ACCESS USER HAS (ADMIN / STAFF)
+    password: {
+      type: String,
+      required: true
+    },
+
     role: {
       type: String,
-      enum: Object.values(ROLES),
-      default: ROLES.ADMIN
+      enum: ["OWNER", "STAFF"],
+      default: "STAFF"
+    },
+
+    permissions: {
+      type: Object,
+      default: {}
+    },
+
+    isActive: {
+      type: Boolean,
+      default: true
     },
 
     resetPasswordToken: String,
-    resetPasswordExpires: Date,
-
-    permissions: {
-      ADD_SUPPLIER: { type: Boolean, default: false },
-      ADD_COMPANY: { type: Boolean, default: false },
-      ADD_VEHICLE: { type: Boolean, default: false },
-    }
+    resetPasswordExpires: Date
   },
   { timestamps: true }
 );
 
-
-/**
- * 🔐 Create Reset Token
- */
-userSchema.methods.createPasswordResetToken = function () {
-  const resetToken = crypto.randomBytes(32).toString("hex");
-
-  // hash token
-  this.resetPasswordToken = crypto
-    .createHash("sha256")
-    .update(resetToken)
-    .digest("hex");
-
-  // expire in 15 min
-  this.resetPasswordExpires = Date.now() + 15 * 60 * 1000;
-
-  return resetToken;
-};
-
-
-// Prevent same email in same Account
+/* Same email in same account = not allowed */
 userSchema.index({ email: 1, accountId: 1 }, { unique: true });
+
+/* Only ONE OWNER per account */
+userSchema.index(
+  { accountId: 1, role: 1 },
+  {
+    unique: true,
+    partialFilterExpression: { role: "OWNER" }
+  }
+);
 
 export default mongoose.model("User", userSchema);

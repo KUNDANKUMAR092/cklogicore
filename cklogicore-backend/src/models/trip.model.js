@@ -8,6 +8,8 @@ const tripSchema = new mongoose.Schema(
       required: true,
       index: true
     },
+    // Human-readable ID (Ex: TRIP-101)
+    tripId: { type: String, unique: true },
 
     createdByUserId: {
       type: mongoose.Schema.Types.ObjectId,
@@ -32,19 +34,18 @@ const tripSchema = new mongoose.Schema(
       required: true
     },
 
-    tripDate: Date,
+    tripDate: { type: Date, default: Date.now },
     loadingPoint: String,
     unloadingPoint: String,
-
     totalTonLoad: { type: Number, required: true },
 
     rates: {
-      companyRatePerTon: Number,
-      vehicleRatePerTon: Number
+      companyRatePerTon: { type: Number, default: 0 },
+      vehicleRatePerTon: { type: Number, default: 0 }
     },
 
     financials: {
-      freightAmount: Number,
+      freightAmount: { type: Number, default: 0 }, // Auto-calculated
       advancePaid: { type: Number, default: 0 },
       dieselCost: { type: Number, default: 0 },
       tollCost: { type: Number, default: 0 },
@@ -60,38 +61,18 @@ const tripSchema = new mongoose.Schema(
       default: "pending"
     },
 
-    meta: mongoose.Schema.Types.Mixed,
-
-    // ✅ Soft Delete
-    isDeleted: {
-      type: Boolean,
-      default: false,
-      index: true
-    },
-
-    deletedAt: {
-      type: Date,
-      default: null
-    },
+    isActive: { type: Boolean, default: true },
+    isDeleted: { type: Boolean, default: false, index: true },
+    deletedAt: { type: Date, default: null },
+    meta: mongoose.Schema.Types.Mixed
   },
   { timestamps: true }
 );
 
-
-// ✅ ADD INDEX HERE 👇
-tripSchema.index({ accountId: 1, isDeleted: 1 });
-
-
-
-/* 🔥 PROFIT CALCULATION FUNCTION */
-function calculateProfit(doc) {
-  const companyFreight =
-    (doc.totalTonLoad || 0) *
-    (doc.rates?.companyRatePerTon || 0);
-
-  const vehicleCost =
-    (doc.totalTonLoad || 0) *
-    (doc.rates?.vehicleRatePerTon || 0);
+/* 🔥 PROFIT & FREIGHT CALCULATION LOGIC */
+function calculateFinancials(doc) {
+  const companyFreight = (doc.totalTonLoad || 0) * (doc.rates?.companyRatePerTon || 0);
+  const vehicleCost = (doc.totalTonLoad || 0) * (doc.rates?.vehicleRatePerTon || 0);
 
   const expenses =
     (doc.financials?.dieselCost || 0) +
@@ -99,58 +80,21 @@ function calculateProfit(doc) {
     (doc.financials?.driverExpense || 0) +
     (doc.financials?.otherExpense || 0);
 
-  return companyFreight - vehicleCost - expenses;
+  return {
+    freightAmount: companyFreight,
+    profit: companyFreight - vehicleCost - expenses
+  };
 }
 
-
-
-/* ✅ Before Save */
-tripSchema.pre("save", async function () {
-  this.profit = calculateProfit(this);
-  // next();
+/* ✅ Middlewares for Calculation */
+tripSchema.pre("save", function (next) {
+  const { freightAmount, profit } = calculateFinancials(this);
+  this.financials.freightAmount = freightAmount;
+  this.profit = profit;
+  next();
 });
-
-
-/* ✅ Before Update */
-tripSchema.pre("findOneAndUpdate", async function () {
-  const update = this.getUpdate();
-
-  // Get old document
-  const doc = await this.model.findOne(this.getQuery());
-
-  if (!doc) return;
-
-  // Merge old + new data
-  const merged = {
-    ...doc.toObject(),
-    ...update.$set,
-    rates: {
-      ...doc.rates,
-      ...update.$set?.rates
-    },
-    financials: {
-      ...doc.financials,
-      ...update.$set?.financials
-    }
-  };
-
-  // Recalculate profit
-  const profit = calculateProfit(merged);
-
-  // Set profit in update
-  this.setUpdate({
-    ...update,
-    $set: {
-      ...update.$set,
-      profit
-    }
-  });
-});
-
 
 export default mongoose.model("Trip", tripSchema);
-
-
 
 
 
@@ -167,16 +111,23 @@ export default mongoose.model("Trip", tripSchema);
 //       index: true
 //     },
 
+//     createdByUserId: {
+//       type: mongoose.Schema.Types.ObjectId,
+//       ref: "User"
+//     },
+
 //     supplierId: {
 //       type: mongoose.Schema.Types.ObjectId,
 //       ref: "SupplierOwner",
 //       required: true
 //     },
+
 //     companyId: {
 //       type: mongoose.Schema.Types.ObjectId,
 //       ref: "CompanyOwner",
 //       required: true
 //     },
+
 //     vehicleId: {
 //       type: mongoose.Schema.Types.ObjectId,
 //       ref: "VehicleOwner",
@@ -203,7 +154,7 @@ export default mongoose.model("Trip", tripSchema);
 //       otherExpense: { type: Number, default: 0 }
 //     },
 
-//     profit: Number,
+//     profit: { type: Number, default: 0 },
 
 //     status: {
 //       type: String,
@@ -213,39 +164,190 @@ export default mongoose.model("Trip", tripSchema);
 
 //     meta: mongoose.Schema.Types.Mixed,
 
-//     createdByUserId: {
-//       type: mongoose.Schema.Types.ObjectId,
-//       ref: "User"
-//     },
-//     // isDeleted: { type: Boolean, default: false }
 //     // ✅ Soft Delete
 //     isDeleted: {
 //       type: Boolean,
 //       default: false,
 //       index: true
-//     }
+//     },
+
+//     deletedAt: {
+//       type: Date,
+//       default: null
+//     },
 //   },
 //   { timestamps: true }
 // );
 
-// /* 🔥 AUTO PROFIT CALCULATION */
-// tripSchema.pre("save", function () {
+
+// // ✅ ADD INDEX HERE 👇
+// tripSchema.index({ accountId: 1, isDeleted: 1 });
+
+
+
+// /* 🔥 PROFIT CALCULATION FUNCTION */
+// function calculateProfit(doc) {
 //   const companyFreight =
-//     (this.totalTonLoad || 0) *
-//     (this.rates?.companyRatePerTon || 0);
+//     (doc.totalTonLoad || 0) *
+//     (doc.rates?.companyRatePerTon || 0);
 
 //   const vehicleCost =
-//     (this.totalTonLoad || 0) *
-//     (this.rates?.vehicleRatePerTon || 0);
+//     (doc.totalTonLoad || 0) *
+//     (doc.rates?.vehicleRatePerTon || 0);
 
 //   const expenses =
-//     (this.financials?.dieselCost || 0) +
-//     (this.financials?.tollCost || 0) +
-//     (this.financials?.driverExpense || 0) +
-//     (this.financials?.otherExpense || 0);
+//     (doc.financials?.dieselCost || 0) +
+//     (doc.financials?.tollCost || 0) +
+//     (doc.financials?.driverExpense || 0) +
+//     (doc.financials?.otherExpense || 0);
 
-//   this.profit = companyFreight - vehicleCost - expenses;
+//   return companyFreight - vehicleCost - expenses;
+// }
+
+
+
+// /* ✅ Before Save */
+// tripSchema.pre("save", async function () {
+//   this.profit = calculateProfit(this);
+//   // next();
+// });
+
+
+// /* ✅ Before Update */
+// tripSchema.pre("findOneAndUpdate", async function () {
+//   const update = this.getUpdate();
+
+//   // Get old document
+//   const doc = await this.model.findOne(this.getQuery());
+
+//   if (!doc) return;
+
+//   // Merge old + new data
+//   const merged = {
+//     ...doc.toObject(),
+//     ...update.$set,
+//     rates: {
+//       ...doc.rates,
+//       ...update.$set?.rates
+//     },
+//     financials: {
+//       ...doc.financials,
+//       ...update.$set?.financials
+//     }
+//   };
+
+//   // Recalculate profit
+//   const profit = calculateProfit(merged);
+
+//   // Set profit in update
+//   this.setUpdate({
+//     ...update,
+//     $set: {
+//       ...update.$set,
+//       profit
+//     }
+//   });
 // });
 
 
 // export default mongoose.model("Trip", tripSchema);
+
+
+
+
+
+
+
+// // import mongoose from "mongoose";
+
+// // const tripSchema = new mongoose.Schema(
+// //   {
+// //     accountId: {
+// //       type: mongoose.Schema.Types.ObjectId,
+// //       ref: "Account",
+// //       required: true,
+// //       index: true
+// //     },
+
+// //     supplierId: {
+// //       type: mongoose.Schema.Types.ObjectId,
+// //       ref: "SupplierOwner",
+// //       required: true
+// //     },
+// //     companyId: {
+// //       type: mongoose.Schema.Types.ObjectId,
+// //       ref: "CompanyOwner",
+// //       required: true
+// //     },
+// //     vehicleId: {
+// //       type: mongoose.Schema.Types.ObjectId,
+// //       ref: "VehicleOwner",
+// //       required: true
+// //     },
+
+// //     tripDate: Date,
+// //     loadingPoint: String,
+// //     unloadingPoint: String,
+
+// //     totalTonLoad: { type: Number, required: true },
+
+// //     rates: {
+// //       companyRatePerTon: Number,
+// //       vehicleRatePerTon: Number
+// //     },
+
+// //     financials: {
+// //       freightAmount: Number,
+// //       advancePaid: { type: Number, default: 0 },
+// //       dieselCost: { type: Number, default: 0 },
+// //       tollCost: { type: Number, default: 0 },
+// //       driverExpense: { type: Number, default: 0 },
+// //       otherExpense: { type: Number, default: 0 }
+// //     },
+
+// //     profit: Number,
+
+// //     status: {
+// //       type: String,
+// //       enum: ["pending", "running", "completed", "cancelled"],
+// //       default: "pending"
+// //     },
+
+// //     meta: mongoose.Schema.Types.Mixed,
+
+// //     createdByUserId: {
+// //       type: mongoose.Schema.Types.ObjectId,
+// //       ref: "User"
+// //     },
+// //     // isDeleted: { type: Boolean, default: false }
+// //     // ✅ Soft Delete
+// //     isDeleted: {
+// //       type: Boolean,
+// //       default: false,
+// //       index: true
+// //     }
+// //   },
+// //   { timestamps: true }
+// // );
+
+// // /* 🔥 AUTO PROFIT CALCULATION */
+// // tripSchema.pre("save", function () {
+// //   const companyFreight =
+// //     (this.totalTonLoad || 0) *
+// //     (this.rates?.companyRatePerTon || 0);
+
+// //   const vehicleCost =
+// //     (this.totalTonLoad || 0) *
+// //     (this.rates?.vehicleRatePerTon || 0);
+
+// //   const expenses =
+// //     (this.financials?.dieselCost || 0) +
+// //     (this.financials?.tollCost || 0) +
+// //     (this.financials?.driverExpense || 0) +
+// //     (this.financials?.otherExpense || 0);
+
+// //   this.profit = companyFreight - vehicleCost - expenses;
+// // });
+
+
+// // export default mongoose.model("Trip", tripSchema);

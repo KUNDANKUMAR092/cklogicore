@@ -1,0 +1,14 @@
+Middleware ka Sahi Order (Execution Flow)
+Jab koi request aati hai, toh wo hamesha is order mein chalti hai:
+
+loginLimiter: Sabse pehle, taaki koi spam na kar sake.
+
+authMiddleware: Check karne ke liye ki user logged in hai ya nahi.
+
+authorize: Check karne ke liye ki user ke paas us kaam ki permission hai ya nahi.
+
+validate: Check karne ke liye ki data sahi bheja hai ya nahi.
+
+audit: Request khatam hone par log save karne ke liye.
+
+errorHandler: Agar upar kahi bhi galti hui, toh use handle karne ke liye.
