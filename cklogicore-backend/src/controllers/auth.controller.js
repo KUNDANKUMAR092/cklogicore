@@ -31,7 +31,11 @@ export const register = catchAsync(async (req, res) => {
     role: "OWNER"
   });
 
-  res.status(201).json({ success: true, message: "Account created successfully" });
+  // 2. Security: Response bhejte waqt password delete kar dein
+  const accountData = account.toObject();
+  delete accountData.password;
+
+  res.status(201).json({ success: true, message: "Account created successfully", data: accountData });
 });
 
 /* ================= LOGIN (Owner & Staff Dono ke liye) ================= */

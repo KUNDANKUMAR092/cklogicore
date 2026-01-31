@@ -14,12 +14,23 @@ const accountSchema = new mongoose.Schema({
     unique: true,
     lowercase: true
   },
+  password: { 
+    type: String, 
+    required: true, 
+    // select: false 
+  },
   accountType: {
     type: String,
     enum: ["SUPPLIER", "COMPANY", "VEHICLE"],
     required: true
   },
-  avatar: { type: String, default: "" }, // Profile Picture path
+  role: { 
+    type: String, 
+    enum: ["OWNER", "STAFF"],
+    default: "OWNER" 
+  },
+  avatar: { type: String, default: "" }, 
+  bio: { type: String, default: "" },
   personalDetails: {
     address: String,
     city: String,

@@ -5,7 +5,7 @@ export const registerSchema = z.object({
     name: z.string().min(2),
     email: z.string().email(),
     password: z.string().min(8),
-    accountType: z.enum(["FREE", "PRO", "ENTERPRISE"]).optional()
+    accountType: z.enum(["SUPPLIER", "COMPANY", "VEHICLE"]).optional()
   })
 });
 
