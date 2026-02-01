@@ -10,6 +10,7 @@ router.use(authMiddleware); // All routes protected
 router.get("/me", profileCtrl.getMyProfile);
 router.patch("/update", profileCtrl.updateProfile);
 router.patch("/update-avatar", upload.single("avatar"), profileCtrl.updateAvatar);
+router.patch("/update-banner", upload.single("banner"), profileCtrl.updateBanner);
 router.patch("/change-password", profileCtrl.changePassword);
 router.post("/deactivate", profileCtrl.deactivateAccount);
 

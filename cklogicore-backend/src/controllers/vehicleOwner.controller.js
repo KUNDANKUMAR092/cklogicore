@@ -1,7 +1,8 @@
-// src/controllers/vehicleOwner.controllers.js
+// src/controllers/vehicleOwner.controller.js
 
 import VehicleOwner from "../models/vehicleOwner.model.js";
 import { ACCOUNT_TYPES } from "../constants/accountTypes.js";
+import { flattenObject } from "../utils/flattenObject.js";
 
 const catchAsync = (fn) => (req, res, next) => {
   Promise.resolve(fn(req, res, next)).catch(next);
@@ -67,10 +68,13 @@ export const getVehicles = catchAsync(async (req, res) => {
 export const updateVehicle = catchAsync(async (req, res) => {
   const { id } = req.params;
 
-  // 🛡️ Agar body mein vehicleNumber bhej bhi diya, 
-  // toh model hook use block kar dega ya hum yahan delete kar sakte hain
-  const updateData = { ...req.body };
-  delete updateData.vehicleNumber; 
+  // 1. Remove protected fields
+  let updateData = { ...req.body };
+  delete updateData.vehicleNumber;
+  delete updateData._id;
+  delete updateData.accountId;
+
+  const flattenedData = flattenObject(updateData);
 
   const vehicle = await VehicleOwner.findOneAndUpdate(
     { 
@@ -78,7 +82,7 @@ export const updateVehicle = catchAsync(async (req, res) => {
       accountId: req.user.accountId, 
       isDeleted: false 
     },
-    { $set: updateData },
+    { $set: flattenedData },
     { new: true, runValidators: true }
   ).lean();
 
@@ -88,7 +92,7 @@ export const updateVehicle = catchAsync(async (req, res) => {
 
   res.json({ 
     success: true, 
-    message: "Vehicle information updated", 
+    message: "Vehicle information updated successfully", 
     data: vehicle 
   });
 });
@@ -111,198 +115,33 @@ export const toggleVehicleStatus = catchAsync(async (req, res) => {
 
 /* ================= SOFT DELETE VEHICLE ================= */
 export const deleteVehicle = catchAsync(async (req, res) => {
+  const { id } = req.params;
+
+  // Update isDeleted to true instead of removing the document
   const vehicle = await VehicleOwner.findOneAndUpdate(
-    { _id: req.params.id, accountId: req.user.accountId },
-    { isDeleted: true, isActive: false }
+    { 
+      _id: id, 
+      accountId: req.user.accountId,
+      isDeleted: false // Sirf unhe delete karein jo pehle se delete nahi hain
+    },
+    { 
+      $set: { 
+        isDeleted: true, 
+        isActive: false 
+      } 
+    },
+    { new: true }
   );
-  if (!vehicle) return res.status(404).json({ message: "Vehicle not found" });
-  res.json({ success: true, message: "Vehicle removed successfully" });
+
+  if (!vehicle) {
+    return res.status(404).json({ success: false, message: "Vehicle not found or already deleted" });
+  }
+
+  // Audit Log ke liye ID attach karein (agar middleware use kar rahe hain)
+  res.locals.entityId = id;
+
+  res.json({ 
+    success: true, 
+    message: "Vehicle deleted successfully" 
+  });
 });
-
-
-
-
-
-
-
-
-// import Vehicle from "../models/vehicleOwner.model.js";
-// import { logAudit } from "../utils/auditLogger.js";
-
-// /* ================= CREATE ================= */
-
-// export const createVehicle = async (req, res) => {
-//   try {
-//     const vehicle = await Vehicle.create({
-//       ...req.body,
-//       accountId: req.user.accountId
-//     });
-
-//     await logAudit({
-//       accountId: req.user.accountId,
-//       userId: req.user._id,
-//       action: "CREATE",
-//       entity: "Vehicle",
-//       entityId: vehicle._id,
-//       changes: req.body
-//     });
-
-//     res.status(201).json({
-//       success: true,
-//       message: "Vehicle created successfully",
-//       data: vehicle
-//     });
-
-//   } catch (err) {
-
-//     // ✅ Duplicate Error
-//     if (err.code === 11000) {
-//       return res.status(400).json({
-//         success: false,
-//         message: "Vehicle number already exists"
-//       });
-//     }
-
-//     // ✅ Validation Error
-//     if (err.name === "ValidationError") {
-//       return res.status(400).json({
-//         success: false,
-//         message: err.message
-//       });
-//     }
-
-//     res.status(500).json({
-//       success: false,
-//       message: "Create failed"
-//     });
-//   }
-// };
-
-
-// /* ================= GET (Pagination + Search) ================= */
-
-// export const getVehicles = async (req, res) => {
-//   try {
-//     let { page = 1, limit = 10, search = "" } = req.query;
-
-//     page = Number(page);
-//     limit = Number(limit);
-
-//     const query = {
-//       accountId: req.user.accountId,
-
-//       // 🔍 Search
-//       vehicleNumber: {
-//         $regex: search,
-//         $options: "i"
-//       }
-//     };
-
-//     const total = await Vehicle.countDocuments(query);
-
-//     const vehicles = await Vehicle.find(query)
-//       .skip((page - 1) * limit)
-//       .limit(limit)
-//       .sort({ createdAt: -1 });
-
-//     res.json({
-//       success: true,
-//       total,
-//       page,
-//       limit,
-//       data: vehicles
-//     });
-
-//   } catch (err) {
-//     res.status(500).json({
-//       success: false,
-//       message: "Fetch failed"
-//     });
-//   }
-// };
-
-
-// /* ================= UPDATE (Only Active) ================= */
-
-// export const updateVehicle = async (req, res) => {
-//   try {
-
-//     const vehicle = await Vehicle.findOne({
-//       _id: req.params.id,
-//       accountId: req.user.accountId
-//     });
-
-//     if (!vehicle) {
-//       return res.status(404).json({
-//         success: false,
-//         message: "Vehicle not found"
-//       });
-//     }
-
-//     // ❌ Block Inactive
-//     if (!vehicle.isActive) {
-//       return res.status(400).json({
-//         success: false,
-//         message: "Inactive vehicle cannot be updated"
-//       });
-//     }
-
-//     // ❌ Block vehicleNumber
-//     if (req.body.vehicleNumber) {
-//       return res.status(400).json({
-//         success: false,
-//         message: "Vehicle number cannot be changed"
-//       });
-//     }
-
-//     Object.assign(vehicle, req.body);
-//     await vehicle.save();
-
-//     res.json({
-//       success: true,
-//       message: "Updated",
-//       data: vehicle
-//     });
-
-//   } catch (err) {
-//     res.status(500).json({
-//       success: false,
-//       message: "Update failed"
-//     });
-//   }
-// };
-
-
-// /* ================= TOGGLE ACTIVE ================= */
-
-// export const toggleVehicle = async (req, res) => {
-//   try {
-
-//     const vehicle = await Vehicle.findOne({
-//       _id: req.params.id,
-//       accountId: req.user.accountId
-//     });
-
-//     if (!vehicle) {
-//       return res.status(404).json({
-//         success: false,
-//         message: "Vehicle not found"
-//       });
-//     }
-
-//     vehicle.isActive = !vehicle.isActive;
-//     await vehicle.save();
-
-//     res.json({
-//       success: true,
-//       message: "Status updated",
-//       data: vehicle
-//     });
-
-//   } catch (err) {
-//     res.status(500).json({
-//       success: false,
-//       message: "Toggle failed"
-//     });
-//   }
-// };

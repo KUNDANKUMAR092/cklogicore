@@ -1,24 +1,30 @@
+// src/features/vehicles/vehicleSlice.js
+
 import { createSlice } from "@reduxjs/toolkit";
 
 const vehicleSlice = createSlice({
   name: "vehicleUI",
   initialState: {
-    selectedVehicle: null,
-    filters: {},
     isModalOpen: false,
+    filters: {
+      search: "",
+      page: 1,
+      limit: 10
+    },
+    selectedVehicle: null,
   },
   reducers: {
     openVehicleModal: (s) => { s.isModalOpen = true; },
-    setVehicleFilters: (s, a) => { s.filters = a.payload; },
     closeVehicleModal: (s) => { s.isModalOpen = false; },
+    setVehicleFilters:  (s, a) => { s.filters = { ...s.filters, ...a.payload }; },
     setSelectedVehicle: (s, a) => { s.selectedVehicle = a.payload; },
   },
 });
 
 export const {
   openVehicleModal,
-  setVehicleFilters,
   closeVehicleModal,
+  setVehicleFilters,
   setSelectedVehicle,
 } = vehicleSlice.actions;
 

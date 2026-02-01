@@ -34,7 +34,7 @@ router.route("/:id")
 router.patch("/:id/toggle-status", 
   authorize({ module: "ADD_SUPPLIER", action: "true" }), 
   audit("TOGGLE_SUPPLIER_STATUS", "SUPPLIER_OWNER"),
-  supplierCtrl.toggleStatus
+  supplierCtrl.toggleSupplierStatus
 );
 
 export default router;

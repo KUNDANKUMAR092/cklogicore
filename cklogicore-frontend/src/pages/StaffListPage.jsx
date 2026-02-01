@@ -1,42 +1,38 @@
-// src/pages/Companies.jsx
-
-import { useState, useMemo } from "react";
+import React, { useState, useMemo } from "react";
 import CrudList from "../components/CrudList";
-import { companyFields } from "../utils/fieldsConfig";
+import { userFields } from "../utils/fieldsConfig"; // Fields wahi rahenge jo users ke liye the
 import {
-  useGetCompaniesQuery,
-  useCreateCompanyMutation,
-  useUpdateCompanyMutation,
-  useToggleCompanyMutation,
-  useDeleteCompanyMutation,
-} from "../features/companies/companyApi";
+  useGetStaffQuery,
+  useCreateStaffMutation,
+  useUpdateStaffMutation,
+  useDeleteStaffMutation,
+} from "../features/staff/staffApi";
 import { FaPlus } from "react-icons/fa";
 import { toast } from "react-toastify";
 
-const CompanyPage = () => {
+const StaffListPage = () => {
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(4);
   const [open, setOpen] = useState(false);
 
-  // API Call
-  const { data, error, isLoading, isFetching } = useGetCompaniesQuery(
+  // 1. API Call (staffApi use kar rahe hain)
+  const { data, error, isLoading, isFetching } = useGetStaffQuery(
     { page, limit, search },
     { refetchOnMountOrArgChange: true, skip: !page }
   );
 
-  const [createCompany] = useCreateCompanyMutation();
-  const [updateCompany] = useUpdateCompanyMutation();
-  const [toggleCompany] = useToggleCompanyMutation();
-  const [deleteCompany] = useDeleteCompanyMutation();
+  const [createStaff] = useCreateStaffMutation();
+  const [updateStaff] = useUpdateStaffMutation();
+  const [deleteStaff] = useDeleteStaffMutation();
 
-  // Data Memoization
+  // 2. Data Memoization
   const { safeList, total } = useMemo(() => ({
     safeList: Array.isArray(data?.list) ? data.list : [],
     total: Number(data?.total) || 0
   }), [data]);
 
-  /* ================= GENERIC HANDLERS ================= */
+  /* ================= GENERIC HANDLER ================= */
   
   const handleMutation = async (mutationFn, payload, successMsg) => {
     try {
@@ -49,43 +45,46 @@ const CompanyPage = () => {
   };
 
   const handleCreate = (form) => 
-    handleMutation(createCompany, form, "Company created successfully");
+    handleMutation(createStaff, form, "Staff member added successfully");
 
-  const handleUpdate = (id, form) => 
-    handleMutation(updateCompany, { id, body: form }, "Company updated successfully");
-
-  const handleToggale = (id, status) => 
-    handleMutation(toggleCompany, { id, isActive: status }, "Status updated");
+  const handleUpdate = (id, form) => {
+    // Agar edit mode mein password nahi bhejna hai toh yahan delete kar sakte hain
+    const payload = { ...form };
+    if (!payload.password) delete payload.password; 
+    
+    handleMutation(updateStaff, { id, body: payload }, "Staff details updated");
+  };
 
   const handleDelete = (id) => {
-    if (window.confirm("Are you sure you want to delete this company?")) {
-      handleMutation(deleteCompany, id, "Company deleted successfully");
+    if (window.confirm("Are you sure you want to delete this staff member?")) {
+      handleMutation(deleteStaff, id, "Staff member removed");
     }
   };
 
   return (
     <div className="w-full min-w-0 overflow-hidden">
+      {/* Header Section */}
       <div className="flex items-center justify-between mb-4">
-        <h1 className="text-2xl font-bold">Companies</h1>
+        <h1 className="text-2xl font-bold">Staff Directory</h1>
         <button
           onClick={() => setOpen(true)}
           className="px-4 py-1 bg-blue-500 text-white rounded flex items-center hover:bg-blue-600 transition disabled:opacity-50"
           disabled={isLoading}
         >
-          <FaPlus size={12} className="mr-1" /> Add
+          <FaPlus size={12} className="mr-1" /> Add Staff
         </button>
       </div>
 
+      {/* Standard CrudList Component */}
       <CrudList
         data={safeList}
         total={total}
-        fields={companyFields}
+        fields={userFields}
         isLoading={isLoading}
         error={error}
         loading={isFetching}
         onCreate={handleCreate}
         onUpdate={handleUpdate}
-        onToggale={handleToggale}
         onDelete={handleDelete}
         onEdit={true}
         open={open}
@@ -100,4 +99,4 @@ const CompanyPage = () => {
   );
 };
 
-export default CompanyPage;
+export default StaffListPage;

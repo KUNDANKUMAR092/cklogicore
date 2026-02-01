@@ -1,16 +1,32 @@
+// src/features/trips/tripSlice.js
+
 import { createSlice } from "@reduxjs/toolkit";
 
 const tripSlice = createSlice({
   name: "tripUI",
   initialState: {
+    isModalOpen: false,
+    filters: {
+      search: "",
+      page: 1,
+      limit: 10
+    },
     selectedTrip: null,
-    filters: {},
+    
   },
   reducers: {
+    openTripModal: (s) => { s.isModalOpen = true; },
+    closeTripModal: (s) => { s.isModalOpen = false; },
+    setTripFilters: (s, a) => { s.filters = { ...s.filters, ...a.payload }; },
     setSelectedTrip: (s, a) => { s.selectedTrip = a.payload; },
-    setTripFilters: (s, a) => { s.filters = a.payload; },
   },
 });
 
-export const { setSelectedTrip, setTripFilters } = tripSlice.actions;
+export const { 
+  openTripModal, 
+  closeTripModal,
+  setTripFilters, 
+  setSelectedTrip, 
+} = tripSlice.actions;
+
 export default tripSlice.reducer;

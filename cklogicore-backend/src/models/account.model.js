@@ -1,5 +1,3 @@
-// src/models/accountSchema.model.js
-
 import mongoose from "mongoose";
 
 const accountSchema = new mongoose.Schema({
@@ -14,10 +12,19 @@ const accountSchema = new mongoose.Schema({
     unique: true,
     lowercase: true
   },
+  mobile: {
+    type: String,
+    required: true, 
+    trim: true
+  },
+  secondaryEmail: {
+    type: String,
+    lowercase: true,
+    trim: true
+  },
   password: { 
     type: String, 
     required: true, 
-    // select: false 
   },
   accountType: {
     type: String,
@@ -30,6 +37,8 @@ const accountSchema = new mongoose.Schema({
     default: "OWNER" 
   },
   avatar: { type: String, default: "" }, 
+  // 🆕 Field added: Banner Image
+  bannerImage: { type: String, default: "" }, 
   bio: { type: String, default: "" },
   personalDetails: {
     address: String,

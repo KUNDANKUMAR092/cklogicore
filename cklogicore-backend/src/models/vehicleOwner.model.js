@@ -44,12 +44,11 @@ const vehicleSchema = new mongoose.Schema(
 vehicleSchema.index({ accountId: 1, vehicleNumber: 1 }, { unique: true });
 
 // Lock vehicleNumber (No Update)
-vehicleSchema.pre("findOneAndUpdate", function (next) {
+vehicleSchema.pre("findOneAndUpdate", async function () {
   const update = this.getUpdate();
-  if (update?.vehicleNumber || update?.$set?.vehicleNumber) {
-    return next(new Error("Vehicle number cannot be updated after registration"));
+  if (update.vehicleNumber || (update.$set && update.$set.vehicleNumber)) {
+    throw new Error("Vehicle number cannot be updated after registration");
   }
-  next();
 });
 
 export default mongoose.model("VehicleOwner", vehicleSchema);

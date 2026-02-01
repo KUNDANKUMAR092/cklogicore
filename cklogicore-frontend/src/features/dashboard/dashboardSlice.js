@@ -1,12 +1,13 @@
+// src/features/dashboard/dashboardSlice.js
+
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit"
-import { transportService } from "../../services/transport.service.js"
 
 // Async thunk to fetch dashboard data
 export const fetchDashboardData = createAsyncThunk(
   "dashboard/fetchDashboardData",
   async (filters = {}, thunkAPI) => {
     try {
-      const data = await transportService.getAll(filters)
+      const data = "" || []
       return data
     } catch (error) {
       return thunkAPI.rejectWithValue(error.response?.data || "Server Error")

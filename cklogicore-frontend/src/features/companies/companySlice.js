@@ -1,14 +1,22 @@
+// src/features/companies/companySlice.js
+
 import { createSlice } from "@reduxjs/toolkit";
 
 const companySlice = createSlice({
   name: "companyUI",
   initialState: {
-    selectedCompany: null,
     isModalOpen: false,
+    filters: {
+      search: "",
+      page: 1,
+      limit: 10
+    },
+    selectedCompany: null,
   },
   reducers: {
     openCompanyModal: (s) => { s.isModalOpen = true; },
     closeCompanyModal: (s) => { s.isModalOpen = false; },
+    setCompanyFilters:  (s, a) => { s.filters = { ...s.filters, ...a.payload }; },
     setSelectedCompany: (s, a) => { s.selectedCompany = a.payload; },
   },
 });
@@ -16,6 +24,7 @@ const companySlice = createSlice({
 export const {
   openCompanyModal,
   closeCompanyModal,
+  setCompanyFilters,
   setSelectedCompany,
 } = companySlice.actions;
 

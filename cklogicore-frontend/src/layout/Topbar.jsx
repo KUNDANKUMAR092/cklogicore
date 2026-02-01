@@ -1,51 +1,154 @@
-import { useDispatch, useSelector } from "react-redux"
-import { useNavigate, useLocation } from "react-router-dom"
-import { logout } from "../features/auth/authSlice"
-import { formatPathName, formatRole } from "../utils/reUseableFn"
+import React, { useState, useRef, useEffect, useMemo } from "react";
+import { useSelector } from "react-redux";
+import { useLocation, useNavigate } from "react-router-dom";
+import { formatPathName, formatRole } from "../utils/reUseableFn";
+import { FaUserCircle, FaCog, FaInfoCircle, FaPhoneAlt, FaUser, FaSignOutAlt } from "react-icons/fa";
 
 export default function Topbar({ toggleSidebar }) {
-  const { user } = useSelector((state) => state.auth)
-  const location = useLocation()
+  const { user } = useSelector((state) => state.auth);
+  const location = useLocation();
+  const navigate = useNavigate();
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const dropdownRef = useRef(null);
 
+  // Logout Handler
   const handleLogout = () => {
-    localStorage.removeItem("user")
-    localStorage.removeItem("accessToken")
-    window.location.href = "/login"
-  }
+    localStorage.removeItem("user");
+    localStorage.removeItem("accessToken");
+    window.location.href = "/login";
+  };
+
+  // Dropdown ko bahar click karne par close karne ke liye
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // Pyaara Message Logic based on AccountType
+  const accountStatus = useMemo(() => {
+    const type = user?.accountType?.toUpperCase();
+    // Check if it's mobile (optional, but better to handle in JSX via CSS)
+    const isMobile = window.innerWidth < 768; 
+
+    if (type === "VEHICLE") {
+      return isMobile ? "Logistics Partner" : "Your Account is Registered as a Logistics Partner (Vehicle)";
+    }
+    if (type === "COMPANY") {
+      return isMobile ? "Corporate Client" : "You are Managing this Account as a Corporate Client (Company)";
+    }
+    if (type === "SUPPLIER") {
+      return isMobile ? "Verified Supplier" : "This is a Verified Supplier Type Account";
+    }
+    return type || 'General';
+  }, [user]);
+
+  const getWelcomeMessage = () => {
+    const type = user?.accountType?.toUpperCase();
+    const name = user?.name?.split(" ")[0] || "User";
+    
+    if (type === "VEHICLE") return `🚚 Hello ${name}, Drive safe!`;
+    if (type === "COMPANY") return `🏢 Welcome ${name}, Let's manage business!`;
+    if (type === "SUPPLIER") return `📦 Hi ${name}, Stock looks good!`;
+    return `👋 Welcome back, ${name}!`;
+  };
+
+  const welcomeMessage = useMemo(() => {
+    const type = user?.accountType?.toUpperCase();
+    const name = user?.name?.split(" ")[0] || "User";
+    
+    if (type === "VEHICLE") return `🚚 Hello ${name}, Drive safe!`;
+    if (type === "COMPANY") return `🏢 Welcome ${name}, Let's manage business!`;
+    if (type === "SUPPLIER") return `📦 Hi ${name}, Stock looks good!`;
+    return `👋 Welcome back, ${name}!`;
+  }, [user]);
 
   return (
-    <div className="w-full h-16 bg-white shadow flex items-center justify-between px-6">
+    <div className="w-full h-16 bg-white shadow-sm flex items-center justify-between px-4 md:px-6 relative z-50">
+      
       {/* Left: Hamburger + Title */}
-      <div className="flex items-center gap-4">
-        {/* Hamburger */}
+      <div className="flex items-center gap-3">
         <button
           onClick={toggleSidebar}
-          className="md:hidden py-2 rounded hover:bg-gray-200"
+          className="md:hidden p-2 rounded-full hover:bg-gray-100 transition"
         >
           <svg className="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
           </svg>
         </button>
 
-        <h2 className="text-xl font-semibold text-gray-700">
-          {formatRole(user?.role)} {formatPathName(location.pathname.replace("/", "")) || "Dashboard"}
-        </h2>
+        <div className="flex flex-col">
+          <h2 className="text-base md:text-lg font-bold text-gray-800 leading-tight">
+            {accountStatus}
+          </h2>
+          <span className="text-[10px] md:text-xs text-blue-500 font-medium italic">
+            {welcomeMessage}
+          </span>
+        </div>
       </div>
 
-      {/* Right: User Info */}
-      <div className="flex items-center gap-4">
-        {user && <span className="text-gray-600 text-sm">👤 {user.name || user.email}</span>}
+      {/* Right: User Profile Circle & Dropdown */}
+      <div className="relative" ref={dropdownRef}>
         <button
-          onClick={handleLogout}
-          className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 cursor-pointer"
+          onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+          className="flex items-center gap-2 p-1 rounded-full hover:bg-gray-100 transition cursor-pointer"
         >
-          Logout
+          {/* User Initial or Image Circle */}
+          <div className="w-9 h-9 md:w-10 md:h-10 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold border-2 border-white shadow-sm overflow-hidden">
+            {user?.profilePic ? (
+              <img src={user.profilePic} alt="profile" className="w-full h-full object-cover" />
+            ) : (
+              <span>{user?.name?.charAt(0).toUpperCase() || "U"}</span>
+            )}
+          </div>
+          <div className="hidden md:block text-left">
+             <p className="text-xs font-bold text-gray-700 leading-none">{user?.name}</p>
+             <p className="text-[10px] text-gray-500 capitalize">{user?.role?.toLowerCase()}</p>
+          </div>
         </button>
+
+        {/* Dropdown Menu */}
+        {isDropdownOpen && (
+          <div className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-xl border border-gray-100 py-2 animate-in fade-in zoom-in duration-200">
+            <div className="px-4 py-2 border-b border-gray-50 mb-1">
+              <p className="text-sm font-bold text-gray-800 truncate">{user?.name}</p>
+              <p className="text-[11px] text-gray-500 truncate">{user?.email}</p>
+            </div>
+
+            <button onClick={() => navigate("/profile")} className="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-600 hover:bg-blue-50 hover:text-blue-600 transition">
+              <FaUser size={14} /> Profile
+            </button>
+
+            <button onClick={() => navigate("/settings")} className="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-600 hover:bg-blue-50 hover:text-blue-600 transition">
+              <FaCog size={14} /> Settings
+            </button>
+
+            <button onClick={() => navigate("/about")} className="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-600 hover:bg-blue-50 hover:text-blue-600 transition">
+              <FaInfoCircle size={14} /> About Us
+            </button>
+
+            <button onClick={() => navigate("/contact")} className="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-600 hover:bg-blue-50 hover:text-blue-600 transition">
+              <FaPhoneAlt size={14} /> Contact Us
+            </button>
+
+            <div className="border-t border-gray-50 mt-1 pt-1">
+              <button
+                onClick={handleLogout}
+                className="w-full flex items-center gap-3 px-4 py-2 text-sm text-red-500 hover:bg-red-50 transition font-medium"
+              >
+                <FaSignOutAlt size={14} /> Logout
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
-  )
+  );
 }
-
 
 
 
@@ -56,48 +159,45 @@ export default function Topbar({ toggleSidebar }) {
 // import { useNavigate, useLocation } from "react-router-dom"
 // import { logout } from "../features/auth/authSlice"
 // import { formatPathName, formatRole } from "../utils/reUseableFn"
-// // import { logout } from "../../redux/slices/authSlice"
 
-// export default function Topbar() {
-//   const dispatch = useDispatch()
-//   const navigate = useNavigate()
+// export default function Topbar({ toggleSidebar }) {
+//   const { user } = useSelector((state) => state.auth)
 //   const location = useLocation()
 
-//   const { user } = useSelector((state) => state.auth)
-
 //   const handleLogout = () => {
-//     dispatch(logout())
-
 //     localStorage.removeItem("user")
 //     localStorage.removeItem("accessToken")
-
-//     navigate("/login")
+//     window.location.href = "/login"
 //   }
 
 //   return (
 //     <div className="w-full h-16 bg-white shadow flex items-center justify-between px-6">
+//       {/* Left: Hamburger + Title */}
+//       <div className="flex items-center gap-4">
+//         {/* Hamburger */}
+//         <button
+//           onClick={toggleSidebar}
+//           className="md:hidden py-2 rounded hover:bg-gray-200"
+//         >
+//           <svg className="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+//             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+//           </svg>
+//         </button>
 
-//       {/* Left: Logo / Title */}
-//       <h2 className="text-xl font-semibold text-gray-700">
-//         {formatRole(user?.role)} {formatPathName(location.pathname) || "Dashboard"}
-//       </h2>
+//         <h2 className="text-xl font-semibold text-gray-700">
+//           {formatRole(user?.role)} {formatPathName(location.pathname.replace("/", "")) || "Dashboard"}
+//         </h2>
+//       </div>
 
 //       {/* Right: User Info */}
 //       <div className="flex items-center gap-4">
-
-//         {user && (
-//           <span className="text-gray-600 text-sm">
-//             👤 {user.name || user.email}
-//           </span>
-//         )}
-
+//         {user && <span className="text-gray-600 text-sm">👤 {user.name || user.email}</span>}
 //         <button
 //           onClick={handleLogout}
-//           className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600"
+//           className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 cursor-pointer"
 //         >
 //           Logout
 //         </button>
-
 //       </div>
 //     </div>
 //   )

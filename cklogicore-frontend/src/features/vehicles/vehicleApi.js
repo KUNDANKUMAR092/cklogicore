@@ -1,3 +1,5 @@
+// src/features/vehicles/vehicleApi.js
+
 import { createApi } from "@reduxjs/toolkit/query/react";
 import { baseQueryWithReauth } from "../../services/baseQuery";
 
@@ -42,7 +44,7 @@ export const vehicleApi = createApi({
     updateVehicle: builder.mutation({
       query: ({ id, body }) => ({
         url: `/vehicles/${id}`,
-        method: "PUT",
+        method: "PATCH",
         body,
       }),
 
@@ -54,11 +56,19 @@ export const vehicleApi = createApi({
     // ✅ Toggle
     toggleVehicle: builder.mutation({
       query: ({ id, isActive }) => ({
-        url: `/vehicles/${id}/toggle`,
+        url: `/vehicles/${id}/toggle-status`,
         method: "PATCH",
         body: { isActive },
       }),
       invalidatesTags: ["Vehicle"],
+    }),
+
+    deleteVehicle: builder.mutation({
+      query: (id) => ({
+        url: `/vehicles/${id}`,
+        method: 'DELETE',
+      }),
+      invalidatesTags: ['Vehicle'], // Ensure you use the same tag as in your provideTags
     }),
 
   }),
@@ -69,4 +79,5 @@ export const {
   useCreateVehicleMutation,
   useUpdateVehicleMutation,
   useToggleVehicleMutation,
+  useDeleteVehicleMutation
 } = vehicleApi;

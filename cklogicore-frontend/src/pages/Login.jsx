@@ -10,9 +10,7 @@ export default function Login() {
 
   // ✅ Redux auth state
   const { user, accessToken } = useAppSelector((state) => state.auth)
-
   const [login] = useLoginMutation()
-
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -39,7 +37,12 @@ export default function Login() {
     setError("")
 
     try {
-      await login(formData).unwrap();
+      // await login(formData).unwrap();
+      const res = await login(formData).unwrap();
+      // ✅ Direct navigation after success
+      if (res) {
+        navigate("/dashboard", { replace: true });
+      }
     } catch (err) {
       setError(err?.data?.message || "Login failed")
     }

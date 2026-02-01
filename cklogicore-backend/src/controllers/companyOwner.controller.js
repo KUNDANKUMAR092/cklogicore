@@ -2,14 +2,15 @@
 
 import CompanyOwner from "../models/companyOwner.model.js";
 import { ACCOUNT_TYPES } from "../constants/accountTypes.js";
+import { flattenObject } from "../utils/flattenObject.js";
 
 const catchAsync = (fn) => (req, res, next) => {
   Promise.resolve(fn(req, res, next)).catch(next);
 };
 
-/* ================= CREATE COMPANIES ================= */
+/* ================= CREATE COMPANY ================= */
 export const createCompany = catchAsync(async (req, res) => {
-  // 🛡️ SECURITY: Khud Company hokar doosri company add nahi kar sakte
+  // 🛡️ SECURITY: Company account cannot add other companies
   if (req.user.accountType === ACCOUNT_TYPES.COMPANY) {
     return res.status(403).json({ 
       success: false, 
@@ -24,7 +25,7 @@ export const createCompany = catchAsync(async (req, res) => {
     accountId: req.user.accountId, 
     isDeleted: false 
   });
-  if (exists) return res.status(400).json({ message: "Company with this mobile already exists" });
+  if (exists) return res.status(400).json({ success: false, message: "Company with this mobile already exists" });
 
   const company = await CompanyOwner.create({
     ...req.body,
@@ -62,18 +63,23 @@ export const getCompanies = catchAsync(async (req, res) => {
   res.json({ success: true, total, data: companies });
 });
 
-/* ================= UPDATE COMPANIES ================= */
+/* ================= UPDATE COMPANY ================= */
 export const updateCompany = catchAsync(async (req, res) => {
   const { id } = req.params;
 
-  // 🛡️ Ensure ki company usi account ki ho aur deleted na ho
+  let updateData = { ...req.body };
+  // Security: Prevent updating sensitive fields
+  delete updateData._id;
+  delete updateData.accountId;
+  delete updateData.createdBy;
+  // If you want to lock mobile number, uncomment next line:
+  // delete updateData.mobile; 
+
+  const flattenedData = flattenObject(updateData);
+
   const company = await CompanyOwner.findOneAndUpdate(
-    { 
-      _id: id, 
-      accountId: req.user.accountId, 
-      isDeleted: false 
-    },
-    { $set: req.body }, // Body mein jo bhi fields aayenge wo update ho jayenge
+    { _id: id, accountId: req.user.accountId, isDeleted: false },
+    { $set: flattenedData },
     { new: true, runValidators: true }
   ).lean();
 
@@ -81,14 +87,10 @@ export const updateCompany = catchAsync(async (req, res) => {
     return res.status(404).json({ success: false, message: "Company not found" });
   }
 
-  res.json({ 
-    success: true, 
-    message: "Company details updated successfully", 
-    data: company 
-  });
+  res.json({ success: true, message: "Company details updated successfully", data: company });
 });
 
-/* ================= TOGGLE STATUS COMPANIES ================= */
+/* ================= TOGGLE STATUS ================= */
 export const toggleCompanyStatus = catchAsync(async (req, res) => {
   const company = await CompanyOwner.findOne({ 
     _id: req.params.id, 
@@ -96,7 +98,7 @@ export const toggleCompanyStatus = catchAsync(async (req, res) => {
     isDeleted: false 
   });
 
-  if (!company) return res.status(404).json({ message: "Company not found" });
+  if (!company) return res.status(404).json({ success: false, message: "Company not found" });
 
   company.isActive = !company.isActive;
   await company.save();
@@ -104,71 +106,17 @@ export const toggleCompanyStatus = catchAsync(async (req, res) => {
   res.json({ success: true, message: `Company ${company.isActive ? "activated" : "deactivated"}` });
 });
 
-/* ================= SOFT DELETE COMPANIES ================= */
+/* ================= SOFT DELETE ================= */
 export const deleteCompany = catchAsync(async (req, res) => {
+  const { id } = req.params;
   const company = await CompanyOwner.findOneAndUpdate(
-    { _id: req.params.id, accountId: req.user.accountId },
-    { isDeleted: true, isActive: false }
+    { _id: id, accountId: req.user.accountId, isDeleted: false },
+    { $set: { isDeleted: true, isActive: false } },
+    { new: true }
   );
-  if (!company) return res.status(404).json({ message: "Company not found" });
+
+  if (!company) return res.status(404).json({ success: false, message: "Company not found" });
+  
+  res.locals.entityId = id;
   res.json({ success: true, message: "Company removed successfully" });
 });
-
-
-
-
-
-
-// import CompanyOwner from "../models/companyOwner.model.js";
-// import { logAudit } from "../utils/auditLogger.js";
-
-// export const createCompany = async (req, res) => {
-//   const { name, address, gstNo } = req.body;
-//   const company = await CompanyOwner.create({
-//     name, address, gstNo, accountId: req.user.accountId
-//   });
-
-//   // 🔍 AUDIT LOG
-//   await logAudit({
-//     accountId: req.user.accountId,
-//     userId: req.user._id,
-//     action: "CREATE",
-//     entity: "Company",
-//     entityId: company._id,
-//     changes: req.body
-//   });
-
-//   res.json(company);
-// };
-
-// export const getCompanies = async (req, res) => {
-//   const companies = await CompanyOwner.find({ accountId: req.user.accountId });
-//   res.json(companies);
-// };
-
-// export const updateCompany = async (req, res) => {
-//   const { id } = req.params;
-//   const updated = await CompanyOwner.findOneAndUpdate(
-//     { _id: id, accountId: req.user.accountId },
-//     req.body,
-//     { new: true }
-//   );
-//   res.json(updated);
-// };
-
-// export const deleteCompany = async (req, res) => {
-//   const { id } = req.params;
-//   await CompanyOwner.findOneAndDelete({ _id: id, accountId: req.user.accountId });
-
-//   // 🔍 AUDIT LOG
-//   await logAudit({
-//     accountId: req.user.accountId,
-//     userId: req.user._id,
-//     action: "DELETE",
-//     entity: "Company",
-//     entityId: company._id,
-//     changes: { isDeleted: true }
-//   });
-
-//   res.json({ message: "Deleted successfully" });
-// };

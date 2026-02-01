@@ -1,77 +1,101 @@
-// SupplierPage.jsx
-import React, { useState } from "react";
+// src/pages/Suppliers.jsx
+
+import React, { useState, useMemo } from "react";
 import CrudList from "../components/CrudList";
 import { supplierFields } from "../utils/fieldsConfig";
 import {
   useGetSuppliersQuery,
-  useCreateSupplierMutation,
-  useUpdateSupplierMutation,
-  useDeleteSupplierMutation,
+  useCreateSuppliersMutation,
+  useUpdateSuppliersMutation,
+  useToggleSuppliersMutation,
+  useDeleteSuppliersMutation,
 } from "../features/suppliers/supplierApi";
 import { FaPlus } from "react-icons/fa";
+import { toast } from "react-toastify";
 
 const SupplierPage = () => {
+  const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(4);
   const [open, setOpen] = useState(false);
 
-  // 1️⃣ Fetch Suppliers
-  const { data = [], isLoading, isFetching } = useGetSuppliersQuery();
+  // API Call
+  const { data, error, isLoading, isFetching } = useGetSuppliersQuery(
+    { page, limit, search },
+    { refetchOnMountOrArgChange: true, skip: !page }
+  );
 
-  // 2️⃣ Mutations
-  const [createSupplier] = useCreateSupplierMutation();
-  const [updateSupplier] = useUpdateSupplierMutation();
-  const [deleteSupplier] = useDeleteSupplierMutation();
+  const [createSuppliers] = useCreateSuppliersMutation();
+  const [updateSuppliers] = useUpdateSuppliersMutation();
+  const [toggleSuppliers] = useToggleSuppliersMutation();
+  const [deleteSuppliers] = useDeleteSuppliersMutation();
 
-  // 3️⃣ Handlers
-  const handleCreate = async (form) => {
+  // Data Memoization
+  const { safeList, total } = useMemo(() => ({
+    safeList: Array.isArray(data?.list) ? data.list : [],
+    total: Number(data?.total) || 0
+  }), [data]);
+
+  /* ================= GENERIC HANDLERS ================= */
+  
+  const handleMutation = async (mutationFn, payload, successMsg) => {
     try {
-      await createSupplier(form).unwrap();
+      await mutationFn(payload).unwrap();
+      toast.success(successMsg);
+      if (open) setOpen(false);
     } catch (err) {
-      console.error("Create Error:", err);
+      toast.error(err?.data?.message || "Operation failed");
     }
   };
 
-  const handleUpdate = async (id, form) => {
-    try {
-      await updateSupplier({ id, body: form }).unwrap();
-    } catch (err) {
-      console.error("Update Error:", err);
-    }
-  };
+  const handleCreate = (form) => 
+    handleMutation(createSuppliers, form, "Suppliers created successfully");
 
-  const handleDelete = async (id) => {
-    if (window.confirm("Are you sure you want to delete this supplier?")) {
-      try {
-        await deleteSupplier(id).unwrap();
-      } catch (err) {
-        console.error("Delete Error:", err);
-      }
+  const handleUpdate = (id, form) => 
+    handleMutation(updateSuppliers, { id, body: form }, "Suppliers updated successfully");
+
+  const handleToggal = (id, status) => 
+    handleMutation(toggleSuppliers, { id, isActive: status }, "Status updated");
+
+  const handleDelete = (id) => {
+    if (window.confirm("Are you sure you want to delete this suppliers?")) {
+      handleMutation(deleteSuppliers, id, "Suppliers deleted successfully");
     }
   };
 
   return (
     <div className="w-full min-w-0 overflow-hidden">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold mb-4">Suppliers</h1>
-        <button onClick={() => setOpen(true)} className="px-4 py-1 bg-blue-500 text-white rounded text-base flex justify-around items-center cursor-pointer"
+      <div className="flex items-center justify-between mb-4">
+        <h1 className="text-2xl font-bold">Suppliers</h1>
+        <button
+          onClick={() => setOpen(true)}
+          className="px-4 py-1 bg-blue-500 text-white rounded flex items-center hover:bg-blue-600 transition disabled:opacity-50"
+          disabled={isLoading}
         >
-          <FaPlus size={12} className="mr-[2px]" /> Add
+          <FaPlus size={12} className="mr-1" /> Add
         </button>
       </div>
 
-      {isLoading || isFetching ? (
-        <p>Loading...</p>
-      ) : (
-        <CrudList
-          data={data}
-          fields={supplierFields }
-          onCreate={handleCreate}
-          onUpdate={handleUpdate}
-          onEdit={true}
-          onDelete={handleDelete}
-          open={open}
-          setOpen={setOpen}
-        />
-      )}
+      <CrudList
+        data={safeList}
+        total={total}
+        fields={supplierFields}
+        isLoading={isLoading}
+        error={error}
+        loading={isFetching}
+        onCreate={handleCreate}
+        onUpdate={handleUpdate}
+        onToggale={handleToggal}
+        onDelete={handleDelete}
+        onEdit={true}
+        open={open}
+        setOpen={setOpen}
+        search={search}
+        setSearch={setSearch}
+        page={page}
+        setPage={setPage}
+        limit={limit}
+      />
     </div>
   );
 };
