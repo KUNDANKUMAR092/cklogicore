@@ -11,8 +11,12 @@ import { FaCamera, FaUserEdit, FaLock, FaSave, FaTimes, FaMapMarkerAlt, FaCalend
 import { formatDate } from "../utils/reUseableFn";
 import DataHandler from "../components/DataHandler";
 
+// .env 
+const baseUrl = import.meta.env.VITE_BASE_URL;
+
 const ProfilePage = () => {
   const { data: user, isLoading, error } = useGetProfileQuery();
+  console.log(user)
   const [updateProfile, { isLoading: isUpdating }] = useUpdateProfileMutation();
   const [updateAvatar] = useUpdateAvatarMutation();
   const [updateBanner] = useUpdateBannerMutation();
@@ -131,8 +135,8 @@ const ProfilePage = () => {
         <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden mb-6">
           {/* Banner Section */}
           <div className="h-48 md:h-64 bg-gray-200 relative group">
-            {user?.banner ? (
-              <img src={`${import.meta.env.VITE_API_URL}/${user.banner}`} alt="Banner" className="w-full h-full object-cover" />
+            {user?.bannerImage ? (
+              <img src={`${baseUrl}/${user.bannerImage}`} alt="bannerImage" className="w-full h-full object-cover" onError={(e) => { e.target.src = "https://via.placeholder.com/150"; }} />
             ) : (
               <div className="w-full h-full bg-gradient-to-r from-blue-700 to-indigo-600"></div>
             )}
@@ -148,7 +152,7 @@ const ProfilePage = () => {
               <div className="relative">
                 <div className="w-40 h-40 rounded-3xl border-8 border-white bg-gray-100 overflow-hidden shadow-2xl flex items-center justify-center">
                   {user?.avatar ? (
-                    <img src={`${import.meta.env.VITE_API_URL}/${user.avatar}`} alt="Avatar" className="w-full h-full object-cover" />
+                    <img src={`${baseUrl}/${user.avatar}`} alt="Avatar" className="w-full h-full object-cover" onError={(e) => { e.target.src = "https://via.placeholder.com/150"; }} />
                   ) : (
                     <span className="text-6xl font-bold text-blue-600">{user?.name?.charAt(0)}</span>
                   )}
@@ -426,7 +430,7 @@ export default ProfilePage;
 //               <div className="relative group">
 //                 <div className="w-32 h-32 rounded-3xl border-4 border-white bg-gray-100 overflow-hidden shadow-lg flex items-center justify-center">
 //                   {user?.avatar ? (
-//                     <img src={`${import.meta.env.VITE_API_URL}/${user.avatar}`} alt="Avatar" className="w-full h-full object-cover" />
+//                     <img src={`${baseUrl}/${user.avatar}`} alt="Avatar" className="w-full h-full object-cover" />
 //                   ) : (
 //                     <span className="text-4xl font-bold text-blue-600">{user?.name?.charAt(0)}</span>
 //                   )}

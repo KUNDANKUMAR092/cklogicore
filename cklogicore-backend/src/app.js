@@ -24,7 +24,15 @@ import { errorHandler } from "./middlewares/error.middleware.js";
 const app = express();
 
 // Security & Parsing
-app.use(helmet());
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: "cross-origin" },
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      imgSrc: ["'self'", "data:", "blob:", "http://localhost:5000"],
+    },
+  },
+}));
 app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));

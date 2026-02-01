@@ -40,7 +40,7 @@ export default function CrudList({
   }, [incomingData]);
 
   const safeFields = useMemo(() => Array.isArray(fields) ? fields : [], [fields]);
-
+  
   /* ================= 2. HELPERS ================= */
   const getNestedValue = (obj, path) => {
     if (!obj || !path) return null;

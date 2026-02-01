@@ -19,24 +19,35 @@ const CrudModal = ({ open, setOpen, fields = [], data, onSubmit }) => {
   useEffect(() => {
     let safeForm = {};
 
-    if (isValidObject(data)) safeForm = { ...data };
+    if (data) {
+      // 1. Edit Mode: Purana data load karein
+      safeForm = { ...data };
+    } else {
+      // 2. Add Mode: Default values (Supplier/Company Name) set karein
+      fields.forEach((f) => {
+        if (f.disabled && f.defaultValue) {
+          safeForm[f.name] = f.defaultValue;
+        }
+      });
+    }
 
-    // Convert all date fields to YYYY-MM-DD
+    // 3. Date Handling (Sabhi Modules ke liye)
     fields.forEach((field) => {
       if (field.type === "date") {
-        safeForm[field.name] = toInputDate(safeForm[field.name]) || (() => {
-          // New form → today
-          const today = new Date();
-          return `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,"0")}-${String(today.getDate()).padStart(2,"0")}`;
-        })();
+        if (safeForm[field.name]) {
+          // Agar date pehle se hai (Edit mode), to use format karein
+          safeForm[field.name] = toInputDate(safeForm[field.name]);
+        } else {
+          // Agar date nahi hai (Add mode), to Aaj ki date set karein
+          safeForm[field.name] = toInputDate(new Date());
+        }
       }
     });
 
     setForm(safeForm);
-  }, [data, fields]);
+  }, [data, fields, open]);
 
-
-
+  
   /* ================================
      Close Modal Protection
   ================================ */

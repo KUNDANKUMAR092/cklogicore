@@ -1,15 +1,11 @@
 // src/features/auth/authApi.js
 
-import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react"
+import { createApi } from "@reduxjs/toolkit/query/react"
 import { setCredentials, logout as logoutAction } from "./authSlice.js"
 import { baseQueryWithReauth } from "../../services/baseQuery.js"
 
 export const authApi = createApi({
   reducerPath: "authApi",
-  // baseQuery: fetchBaseQuery({
-  //   baseUrl: "http://localhost:5000/api/auth/v1",
-  //   credentials: "include"
-  // }),
   baseQuery: baseQueryWithReauth,
   endpoints: (builder) => ({
     // ================= LOGIN =================

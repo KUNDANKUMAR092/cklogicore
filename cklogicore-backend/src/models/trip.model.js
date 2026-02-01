@@ -3,7 +3,7 @@ import mongoose from "mongoose";
 const tripSchema = new mongoose.Schema(
   {
     accountId: { type: mongoose.Schema.Types.ObjectId, ref: "Account", required: true, index: true },
-    tripId: { type: String, unique: true }, // Custom ID (e.g., TRP-2026-001)
+    tripId: { type: String, unique: true }, 
     createdByUserId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
     
     // Entity Links
@@ -33,15 +33,14 @@ const tripSchema = new mongoose.Schema(
       otherExpense: { type: Number, default: 0 }
     },
 
-    // 💰 Auto-Calculated Trip Fields (Stored in DB)
+    // 💰 Auto-Calculated Fields
     totalFinancials: {
       totalAmountForCompany: { type: Number, default: 0 },
       totalAmountForVehicle: { type: Number, default: 0 },
       totalAmountForSupplier: { type: Number, default: 0 },
-      profitPerTrip: { type: Number, default: 0 } // Individual Profit
+      profitPerTrip: { type: Number, default: 0 } 
     },
 
-    // Challans Uploaded during creation
     challans: [{
       fileUrl: String,
       fileName: String,
@@ -61,35 +60,147 @@ const tripSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-// 🔥 Business Calculation Engine
-const runTripCalculations = (doc) => {
+/**
+ * 🔥 Business Logic Engine
+ * Logic: Profit = (Company Se Milne Wala Paisa) - (Vehicle Ko Dene Wala Paisa + Kharcha)
+ */
+const calculateTripFinancials = (doc) => {
   const load = doc.totalTonLoad || 0;
   const r = doc.rates || {};
-  const e = doc.financials || {};
+  const f = doc.financials || {};
 
   const totalCompany = load * (r.companyRatePerTon || 0);
   const totalVehicle = load * (r.vehicleRatePerTon || 0);
   const totalSupplier = load * (r.supplierRatePerTon || 0);
 
-  const totalExpenses = (e.dieselCost || 0) + (e.tollCost || 0) + (e.driverExpense || 0) + (e.otherExpense || 0);
+  const totalExpenses = 
+    (f.dieselCost || 0) + 
+    (f.tollCost || 0) + 
+    (f.driverExpense || 0) + 
+    (f.otherExpense || 0);
 
-  // profitPerTrip = What you get from Company - (What you pay Vehicle + Expenses)
+  // Profit calculation
   const profit = totalCompany - totalVehicle - totalExpenses;
 
   return { totalCompany, totalVehicle, totalSupplier, profit };
 };
 
-// Middleware to calculate before saving
-tripSchema.pre("save", function (next) {
-  const result = runTripCalculations(this);
-  this.totalFinancials.totalAmountForCompany = result.totalCompany;
-  this.totalFinancials.totalAmountForVehicle = result.totalVehicle;
-  this.totalFinancials.totalAmountForSupplier = result.totalSupplier;
-  this.totalFinancials.profitPerTrip = result.profit;
-  next();
+// 🛡️ Middleware: Save hone se pehle automatic calculation
+// Note: Isko 'async' function banaya hai bina 'next' ke taaki crash na ho
+tripSchema.pre("save", async function () {
+  const result = calculateTripFinancials(this);
+  
+  this.totalFinancials = {
+    totalAmountForCompany: result.totalCompany,
+    totalAmountForVehicle: result.totalVehicle,
+    totalAmountForSupplier: result.totalSupplier,
+    profitPerTrip: result.profit
+  };
 });
 
 export default mongoose.model("Trip", tripSchema);
+
+
+
+
+
+
+
+
+
+
+
+// import mongoose from "mongoose";
+
+// const tripSchema = new mongoose.Schema(
+//   {
+//     accountId: { type: mongoose.Schema.Types.ObjectId, ref: "Account", required: true, index: true },
+//     tripId: { type: String, unique: true }, // Custom ID (e.g., TRP-2026-001)
+//     createdByUserId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+    
+//     // Entity Links
+//     supplierId: { type: mongoose.Schema.Types.ObjectId, ref: "SupplierOwner", required: true },
+//     companyId: { type: mongoose.Schema.Types.ObjectId, ref: "CompanyOwner", required: true },
+//     vehicleId: { type: mongoose.Schema.Types.ObjectId, ref: "VehicleOwner", required: true },
+
+//     // Trip Details
+//     tripDate: { type: Date, default: Date.now },
+//     loadingPoint: { type: String, trim: true },
+//     unloadingPoint: { type: String, trim: true },
+//     totalTonLoad: { type: Number, required: true },
+
+//     // Input Rates
+//     rates: {
+//       companyRatePerTon: { type: Number, default: 0 },
+//       vehicleRatePerTon: { type: Number, default: 0 },
+//       supplierRatePerTon: { type: Number, default: 0 }
+//     },
+
+//     // Variable Expenses
+//     financials: {
+//       advancePaid: { type: Number, default: 0 },
+//       dieselCost: { type: Number, default: 0 },
+//       tollCost: { type: Number, default: 0 },
+//       driverExpense: { type: Number, default: 0 },
+//       otherExpense: { type: Number, default: 0 }
+//     },
+
+//     // 💰 Auto-Calculated Trip Fields (Stored in DB)
+//     totalFinancials: {
+//       totalAmountForCompany: { type: Number, default: 0 },
+//       totalAmountForVehicle: { type: Number, default: 0 },
+//       totalAmountForSupplier: { type: Number, default: 0 },
+//       profitPerTrip: { type: Number, default: 0 } // Individual Profit
+//     },
+
+//     // Challans Uploaded during creation
+//     challans: [{
+//       fileUrl: String,
+//       fileName: String,
+//       uploadedAt: { type: Date, default: Date.now }
+//     }],
+
+//     status: {
+//       type: String,
+//       enum: ["pending", "running", "completed", "cancelled"],
+//       default: "pending"
+//     },
+
+//     isActive: { type: Boolean, default: true },
+//     isDeleted: { type: Boolean, default: false, index: true },
+//     deletedAt: { type: Date, default: null }
+//   },
+//   { timestamps: true }
+// );
+
+// // 🔥 Business Calculation Engine
+// const runTripCalculations = (doc) => {
+//   const load = doc.totalTonLoad || 0;
+//   const r = doc.rates || {};
+//   const e = doc.financials || {};
+
+//   const totalCompany = load * (r.companyRatePerTon || 0);
+//   const totalVehicle = load * (r.vehicleRatePerTon || 0);
+//   const totalSupplier = load * (r.supplierRatePerTon || 0);
+
+//   const totalExpenses = (e.dieselCost || 0) + (e.tollCost || 0) + (e.driverExpense || 0) + (e.otherExpense || 0);
+
+//   // profitPerTrip = What you get from Company - (What you pay Vehicle + Expenses)
+//   const profit = totalCompany - totalVehicle - totalExpenses;
+
+//   return { totalCompany, totalVehicle, totalSupplier, profit };
+// };
+
+// // Middleware to calculate before saving
+// tripSchema.pre("save", function () {
+//   const result = runTripCalculations(this);
+//   this.totalFinancials.totalAmountForCompany = result.totalCompany;
+//   this.totalFinancials.totalAmountForVehicle = result.totalVehicle;
+//   this.totalFinancials.totalAmountForSupplier = result.totalSupplier;
+//   this.totalFinancials.profitPerTrip = result.profit;
+// });
+
+// export default mongoose.model("Trip", tripSchema);
 
 
 
