@@ -9,52 +9,51 @@ export const tripApi = createApi({
   tagTypes: ["Trip"],
   endpoints: (builder) => ({
     
-    // ✅ GET Trips with Pagination & Search
+    // ✅ GET Trips with Pagination, Search & Summary
     getTrips: builder.query({
       query: (params) => ({
         url: "/trips",
-        params, // Isse ?page=1&limit=10&search=... query banegi
+        params, 
       }),
       transformResponse: (response) => ({
-        list: response.data,
-        total: response.total,
-        page: response.page,
-        limit: response.limit,
+        list: response.data || [],
+        total: response.pagination?.totalRecords || 0,
+        summary: response.summary || {}, // Backend se summary bhi aa rahi hai
+        currentPage: response.pagination?.currentPage || 1,
       }),
       providesTags: ["Trip"],
     }),
 
-    // ✅ CREATE
+    // ✅ CREATE (FormData automatically handled by RTK Query)
     createTrip: builder.mutation({
-      query: (body) => ({
+      query: (formData) => ({
         url: "/trips",
         method: "POST",
-        body,
+        body: formData, 
       }),
       invalidatesTags: ["Trip"],
     }),
 
-    // ✅ UPDATE (PUT ko aksar PATCH bhi use karte hain, check your backend)
+    // ✅ UPDATE (Aapke backend mein PATCH route hai)
     updateTrip: builder.mutation({
       query: ({ id, body }) => ({
         url: `/trips/${id}`,
-        method: "PUT",
-        body,
+        method: "PATCH", // Backend route: router.patch("/:id")
+        body: body, // FormData for updates
       }),
       invalidatesTags: ["Trip"],
     }),
 
-    // ✅ TOGGLE / SOFT DELETE
+    // ✅ TOGGLE STATUS (Aapke backend route ke mutabik)
     toggleTrip: builder.mutation({
-      query: ({ id, isDeleted }) => ({
-        url: `/trips/${id}/toggle`,
+      query: ({ id }) => ({
+        url: `/trips/${id}/toggle-status`, // Fix: Match backend route
         method: "PATCH",
-        body: { isDeleted },
       }),
       invalidatesTags: ["Trip"],
     }),
 
-    // ✅ DELETE (Physical Delete)
+    // ✅ DELETE (Soft Delete backend handle kar raha hai)
     deleteTrip: builder.mutation({
       query: (id) => ({
         url: `/trips/${id}`,
@@ -70,5 +69,5 @@ export const {
   useCreateTripMutation,
   useUpdateTripMutation,
   useToggleTripMutation,
-  useDeleteTripMutation, // Hook export karein
+  useDeleteTripMutation,
 } = tripApi;

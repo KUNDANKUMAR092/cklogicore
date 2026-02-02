@@ -17,37 +17,27 @@ const CrudModal = ({ open, setOpen, fields = [], data, onSubmit }) => {
      Handle Incoming Data Safely
   ================================ */
   useEffect(() => {
-    let safeForm = {};
-
-    if (data) {
-      // 1. Edit Mode: Purana data load karein
-      safeForm = { ...data };
-    } else {
-      // 2. Add Mode: Default values (Supplier/Company Name) set karein
-      fields.forEach((f) => {
-        if (f.disabled && f.defaultValue) {
-          safeForm[f.name] = f.defaultValue;
+    if (open) {
+      let initialForm = {};
+      if (data) {
+        initialForm = { ...data };
+      } else {
+        fields.forEach((f) => {
+          if (f.defaultValue) {
+            initialForm[f.name] = f.defaultValue;
+          }
+        });
+      }
+      fields.forEach((field) => {
+        if (field.type === "date") {
+          const dateToFormat = initialForm[field.name] || new Date();
+          initialForm[field.name] = toInputDate(dateToFormat);
         }
       });
+      setForm(initialForm);
     }
-
-    // 3. Date Handling (Sabhi Modules ke liye)
-    fields.forEach((field) => {
-      if (field.type === "date") {
-        if (safeForm[field.name]) {
-          // Agar date pehle se hai (Edit mode), to use format karein
-          safeForm[field.name] = toInputDate(safeForm[field.name]);
-        } else {
-          // Agar date nahi hai (Add mode), to Aaj ki date set karein
-          safeForm[field.name] = toInputDate(new Date());
-        }
-      }
-    });
-
-    setForm(safeForm);
   }, [data, fields, open]);
 
-  
   /* ================================
      Close Modal Protection
   ================================ */
@@ -81,7 +71,7 @@ const CrudModal = ({ open, setOpen, fields = [], data, onSubmit }) => {
     try {
       setLoading(true);
       await onSubmit(form);
-      setOpen(false); // close on success
+      setOpen(false);
     } catch (err) {
       console.error("Submit Error:", err);
       setError(err?.message || "Something went wrong. Please try again.");

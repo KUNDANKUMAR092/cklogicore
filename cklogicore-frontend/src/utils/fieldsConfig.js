@@ -32,23 +32,92 @@ export const vehicleFields = [
   { name: "documents.permitExpiry", label: "Permit Expiry", type: "date" }
 ];
 
-export const tripFields = [
-  { name: "supplierId", label: "Supplier", type: "select", required: true },
-  { name: "companyId", label: "Company", type: "select", required: true },
-  { name: "vehicleId", label: "Vehicle", type: "select", required: true },
+export const getTripFields = (accountType, currentId) => [
+  // Entity Links with Conditional Disable
+  { 
+    name: "supplierId", 
+    label: "Supplier", 
+    type: "select", 
+    required: true,
+    disabled: accountType === "supplier",
+    defaultValue: accountType === "supplier" ? currentId : "" 
+  },
+  { 
+    name: "companyId", 
+    label: "Company", 
+    type: "select", 
+    required: true,
+    disabled: accountType === "company",
+    defaultValue: accountType === "company" ? currentId : "" 
+  },
+  { 
+    name: "vehicleId", 
+    label: "Vehicle", 
+    type: "select", 
+    required: true,
+    disabled: accountType === "vehicle",
+    defaultValue: accountType === "vehicle" ? currentId : "" 
+  },
+
+  // Trip Details
   { name: "tripDate", label: "Trip Date", type: "date", required: true },
-  { name: "loadingPoint", label: "Loading Point", type: "text" },
-  { name: "unloadingPoint", label: "Unloading Point", type: "text" },
+  { name: "loadingPoint", label: "Loading Point", type: "text", required: true },
+  { name: "unloadingPoint", label: "Unloading Point", type: "text", required: true },
   { name: "totalTonLoad", label: "Total Ton Load", type: "number", required: true },
-  { name: "rates.companyRatePerTon", label: "Company Rate/Ton", type: "number" },
-  { name: "rates.vehicleRatePerTon", label: "Vehicle Rate/Ton", type: "number" },
-  { name: "financials.freightAmount", label: "Freight Amount", type: "number" },
+
+  // Input Rates
+  { 
+    name: "rates.companyRatePerTon", 
+    label: "Company Rate/Ton", 
+    type: "number", 
+    // Agar accountType 'company' hai toh hide/optional kardo
+    required: accountType !== "company",
+    hidden: accountType === "company" 
+  },
+  { 
+    name: "rates.vehicleRatePerTon", 
+    label: "Vehicle Rate/Ton", 
+    type: "number", 
+    // Agar accountType 'vehicle_owner' hai toh hide/optional kardo
+    required: accountType !== "vehicle",
+    hidden: accountType === "vehicle"
+  },
+  { 
+    name: "rates.supplierRatePerTon", 
+    label: "Supplier Rate/Ton", 
+    type: "number", 
+    // Agar accountType 'supplier' hai toh hide/optional kardo
+    required: accountType !== "supplier",
+    hidden: accountType === "supplier"
+  },
+
+  // Financials (Expenses)
   { name: "financials.advancePaid", label: "Advance Paid", type: "number" },
   { name: "financials.dieselCost", label: "Diesel Cost", type: "number" },
   { name: "financials.tollCost", label: "Toll Cost", type: "number" },
   { name: "financials.driverExpense", label: "Driver Expense", type: "number" },
   { name: "financials.otherExpense", label: "Other Expense", type: "number" },
-  { name: "status", label: "Status", type: "select", options: [
+
+  // 💰 Auto-Calculated Fields (Hamesha Disable rahenge)
+  { name: "totalFinancials.totalAmountForCompany", label: "Total Company Pay", type: "number", disabled: true },
+  { name: "totalFinancials.totalAmountForVehicle", label: "Total Vehicle Pay", type: "number", disabled: true },
+  { name: "totalFinancials.totalAmountForSupplier", label: "Total Supplier Pay", type: "number", disabled: true },
+  { name: "totalFinancials.profitPerTrip", label: "Expected Profit", type: "number", disabled: true },
+
+  { 
+    name: "challans", 
+    label: "Upload Challans", 
+    type: "file",
+    multiple: true,
+    accept: "image/*,application/pdf",
+    required: false 
+  },
+
+  { 
+    name: "status", 
+    label: "Status", 
+    type: "select", 
+    options: [
       { label: "Pending", value: "pending" },
       { label: "Running", value: "running" },
       { label: "Completed", value: "completed" },

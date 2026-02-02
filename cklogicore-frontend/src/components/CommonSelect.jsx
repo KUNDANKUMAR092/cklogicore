@@ -1,43 +1,52 @@
 import React from "react";
-import { FaChevronDown } from "react-icons/fa"; // Ek sundar icon ke liye
+import { FaChevronDown } from "react-icons/fa";
 
-const CommonSelect = ({ name, value, options = [], onChange, disabled, required }) => {
-  const isValueInOptions = options.some(opt => String(opt.value) === String(value));
+const CommonSelect = ({
+  name,
+  value,
+  options = [],
+  onChange,
+  disabled,
+  required
+}) => {
+  const finalValue =
+    disabled && (value === "" || value === null || value === undefined)
+      ? options?.[0]?.value || ""
+      : value || "";
+
+  // Placeholder color logic: agar value empty hai toh text grey dikhega (input placeholder ki tarah)
+  const isPlaceholderActive = finalValue === "";
+
   return (
-    <div className="relative w-full group">
+    <div className="relative w-full">
       <select
         name={name}
-        value={value || ""}
+        value={finalValue}
         onChange={onChange}
         disabled={disabled}
         required={required}
-        // Design ko Input fields se match karne ke liye padding aur rounding fix ki hai
-        className={`w-full px-4 py-3 border rounded-2xl text-sm font-medium outline-none transition-all duration-200 appearance-none cursor-pointer
+        className={`w-full px-4 py-3 border rounded-2xl text-sm font-medium outline-none transition-all duration-200 appearance-none
           ${disabled 
             ? "bg-gray-50 border-gray-100 text-gray-400 cursor-not-allowed" 
-            : "bg-white border-gray-200 text-gray-700 focus:border-blue-400 focus:ring-4 focus:ring-blue-500/10 hover:border-gray-300"
+            : `bg-white border-gray-200 focus:border-blue-400 focus:ring-4 focus:ring-blue-500/10 ${
+                isPlaceholderActive ? "text-gray-400" : "text-gray-700"
+              }`
           }`}
       >
-        <option value="" disabled className="text-gray-400">
-          Select {name?.replace("Id", "")}...
+        <option value="" disabled>
+          Enter {name?.replace("Id", "").toLowerCase()}...
         </option>
 
-        {/* FIX: Agar disabled hai aur options abhi load nahi huye, to current value dikhao */}
-        {disabled && value && !isValueInOptions && (
-          <option value={value}>Loading name...</option>
-        )}
-
-        {options.map((opt) => (
-          <option key={opt.value} value={opt.value}>
+        {options.map(opt => (
+          <option key={opt.value} value={opt.value} className="text-gray-700">
             {opt.label}
           </option>
         ))}
       </select>
-
-      {/* Custom Dropdown Arrow Icon - Default arrow ko hata kar ye lagaya hai */}
-      <div className={`absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none transition-colors 
-        ${disabled ? 'text-gray-300' : 'text-gray-400 group-hover:text-blue-500'}`}>
-        <FaChevronDown size={10} />
+      
+      {/* Icon ko dubara add karna zaroori hai kyunki appearance-none ne arrow hata diya hai */}
+      <div className="absolute inset-y-0 right-4 flex items-center pointer-events-none">
+        <FaChevronDown className={`text-xs ${disabled ? 'text-gray-300' : 'text-gray-400'}`} />
       </div>
     </div>
   );

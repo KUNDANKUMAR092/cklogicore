@@ -4,7 +4,8 @@ import { createSlice } from "@reduxjs/toolkit"
 
 const initialState = {
   user: JSON.parse(localStorage.getItem("user")) || null, // ✅ restore from localStorage
-  accessToken: localStorage.getItem("accessToken") || null
+  accessToken: localStorage.getItem("accessToken") || null,
+  entityId: localStorage.getItem("entityId") || null,
 }
 
 const authSlice = createSlice({

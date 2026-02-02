@@ -2,14 +2,16 @@
 
 export const validate = (schema) => (req, res, next) => {
   try {
-    schema.parse({
+    const parsedData = schema.parse({
       body: req.body,
       query: req.query,
       params: req.params,
     });
+
+    req.body = parsedData.body;
+ 
     next();
   } catch (err) {
-    // Ye error seedha Global Error Handler (app.js wala) pakad lega
     next(err); 
   }
 };

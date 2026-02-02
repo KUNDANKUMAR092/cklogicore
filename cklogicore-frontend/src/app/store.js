@@ -1,6 +1,8 @@
 import { configureStore } from "@reduxjs/toolkit"
 
 // APIs
+import { dashboardApi } from "../features/dashboard/dashboardApi";
+import { excelApi } from "../features/excel/excelApi";
 import { reportsApi } from "../features/reports/reportsApi";
 import { authApi } from "../features/auth/authApi.js"
 import { supplierApi } from "../features/suppliers/supplierApi";
@@ -14,6 +16,7 @@ import { profileApi } from "../features/profile/profileApi";
 
 
 // UI Slices
+import dashboardReducer from "../features/dashboard/dashboardSlice";
 import reportsReducer from "../features/reports/reportsSlice";
 import authReducer from "../features/auth/authSlice.js"
 import companyReducer from "../features/companies/companySlice";
@@ -30,6 +33,8 @@ export const store = configureStore({
     
 
     // RTK Query reducers
+    [dashboardApi.reducerPath]: dashboardApi.reducer,
+    [excelApi.reducerPath]: excelApi.reducer,
     [reportsApi.reducerPath]: reportsApi.reducer,
     [authApi.reducerPath]: authApi.reducer,
     [supplierApi.reducerPath]: supplierApi.reducer,
@@ -42,6 +47,7 @@ export const store = configureStore({
     [profileApi.reducerPath]: profileApi.reducer,
 
     // UI reducers
+    dashboard: dashboardReducer,
     reportsUI: reportsReducer,
     auth: authReducer,
     companyUI: companyReducer,
@@ -54,6 +60,8 @@ export const store = configureStore({
   },
   middleware: (getDefault) =>
     getDefault().concat(
+      dashboardApi.middleware,
+      excelApi.middleware,
       reportsApi.middleware,
       authApi.middleware, 
       supplierApi.middleware,
