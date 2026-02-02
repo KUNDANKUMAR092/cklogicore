@@ -16,7 +16,7 @@ import { toast } from "react-toastify";
 const SupplierPage = () => {
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(4);
+  const [limit, setLimit] = useState(10);
   const [open, setOpen] = useState(false);
 
   // API Call

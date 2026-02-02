@@ -67,6 +67,24 @@ export const getSuppliers = catchAsync(async (req, res) => {
 export const updateSupplier = catchAsync(async (req, res) => {
   const { id } = req.params;
 
+  const existingSupplier = await SupplierOwner.findOne({ 
+    _id: id, 
+    accountId: req.user.accountId, 
+    isDeleted: false 
+  });
+
+  if (!existingSupplier) {
+    return res.status(404).json({ success: false, message: "Supplier not found" });
+  }
+
+  // 🛡️ SECURITY:
+  if (!existingSupplier.isActive) {
+    return res.status(400).json({ 
+      success: false, 
+      message: "Inactive supplier cannot be updated. Please activate first." 
+    });
+  }
+
   let updateData = { ...req.body };
   delete updateData._id;
   delete updateData.accountId;
@@ -75,16 +93,21 @@ export const updateSupplier = catchAsync(async (req, res) => {
   const flattenedData = flattenObject(updateData);
 
   const supplier = await SupplierOwner.findOneAndUpdate(
-    { _id: id, accountId: req.user.accountId, isDeleted: false },
+    { 
+      _id: id, 
+      accountId: req.user.accountId, 
+      isDeleted: false,
+      isActive: true 
+    },
     { $set: flattenedData },
     { new: true, runValidators: true }
   ).lean();
 
-  if (!supplier) {
-    return res.status(404).json({ success: false, message: "Supplier not found" });
-  }
-
-  res.json({ success: true, message: "Supplier details updated successfully", data: supplier });
+  res.json({ 
+    success: true, 
+    message: "Supplier details updated successfully", 
+    data: supplier 
+  });
 });
 
 /* ================= TOGGLE STATUS ================= */

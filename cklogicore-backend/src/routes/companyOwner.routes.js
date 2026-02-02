@@ -23,7 +23,7 @@ router.route("/:id")
   .patch(
     authorize({ module: "ADD_COMPANY", action: "true" }),
     audit("UPDATE_COMPANY", "COMPANY_OWNER"),
-    companyCtrl.createCompany 
+    companyCtrl.updateCompany 
   )
   .delete(
     authorize({ roles: ["OWNER"] }),
@@ -38,65 +38,3 @@ router.patch("/:id/toggle-status",
 );
 
 export default router;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// import express from "express";
-// import {
-//   createCompany,
-//   getCompanies,
-//   updateCompany,
-//   deleteCompany
-// } from "../controllers/companyOwner.controller.js";
-// import { authMiddleware } from "../middlewares/auth.middleware.js";
-// import { authorize } from "../middlewares/authorize.middleware.js";
-// import { ACCOUNT_TYPES } from "../constants/accountTypes.js";
-// import { ROLES } from "../constants/roles.js";
-// import { PERMISSIONS } from "../constants/permissions.js";
-
-// const router = express.Router();
-
-// router.use(authMiddleware);
-
-// router.post(
-//   "/companies",
-//   authorize({
-//     roles: ["ADMIN"],
-//     accountTypes: ["COMPANY"],
-//     permissions: ["MASTER_COMPANY_ADD"],
-//   }),
-//   createCompany
-// );
-// router.get("/", getCompanies);
-// router.put(
-//   "/:id", 
-//   authorize({
-//     roles: ["ADMIN"],
-//     accountTypes: ["COMPANY"],
-//     permissions: ["MASTER_COMPANY_ADD"],
-//   }), 
-//   updateCompany);
-// router.delete(
-//   "/:id", 
-//   authorize({
-//     roles: ["ADMIN"],
-//     accountTypes: ["COMPANY"],
-//     permissions: ["MASTER_COMPANY_ADD"],
-//   }), 
-//   deleteCompany);
-
-// export default router;

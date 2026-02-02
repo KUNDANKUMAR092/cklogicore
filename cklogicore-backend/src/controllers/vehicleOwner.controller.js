@@ -68,11 +68,29 @@ export const getVehicles = catchAsync(async (req, res) => {
 export const updateVehicle = catchAsync(async (req, res) => {
   const { id } = req.params;
 
-  // 1. Remove protected fields
+  const existingVehicle = await VehicleOwner.findOne({ 
+    _id: id, 
+    accountId: req.user.accountId, 
+    isDeleted: false 
+  });
+
+  if (!existingVehicle) {
+    return res.status(404).json({ success: false, message: "Vehicle not found" });
+  }
+
+  // 🛡️ Logic: 
+  if (!existingVehicle.isActive) {
+    return res.status(400).json({ 
+      success: false, 
+      message: "Inactive vehicle cannot be updated. Please activate it first." 
+    });
+  }
+
   let updateData = { ...req.body };
   delete updateData.vehicleNumber;
   delete updateData._id;
   delete updateData.accountId;
+  delete updateData.createdBy;
 
   const flattenedData = flattenObject(updateData);
 
@@ -80,15 +98,12 @@ export const updateVehicle = catchAsync(async (req, res) => {
     { 
       _id: id, 
       accountId: req.user.accountId, 
-      isDeleted: false 
+      isDeleted: false,
+      isActive: true 
     },
     { $set: flattenedData },
     { new: true, runValidators: true }
   ).lean();
-
-  if (!vehicle) {
-    return res.status(404).json({ success: false, message: "Vehicle not found" });
-  }
 
   res.json({ 
     success: true, 

@@ -11,15 +11,14 @@ const safeUpload = (req, res, next) => {
   const isMultipart = req.headers["content-type"]?.includes("multipart/form-data");
 
   if (isMultipart) {
-    // Multer middleware ko execute karein aur errors handle karein
     return upload.array("challans", 10)(req, res, (err) => {
       if (err) {
         return res.status(400).json({ success: false, message: "Upload error", error: err.message });
       }
-      next(); // Yeh agle middleware (validate) par bhejega
+      next();
     });
   }
-  next(); // Agar multipart nahi hai toh seedha aage badhein
+  next();
 };
 
 
@@ -42,7 +41,7 @@ router.route("/:id")
   .get(tripCtrl.getTripById)
   .patch(
     authorize({ module: "MANAGE_TRIPS", action: "true" }), 
-    safeUpload, // 🔥 Yahan safeUpload add karein (FormData parse karne ke liye)
+    safeUpload, 
     validate(updateTripSchema),   
     tripCtrl.updateTrip
   )

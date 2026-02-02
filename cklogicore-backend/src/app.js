@@ -68,16 +68,6 @@ app.use("/api/v1/reports", reportRoutes);
 // uploads Pic Route
 app.use("/uploads", express.static("uploads"));
 // ❗ 404 handler 
-// app.use((req, res, next) => {
-//   const error = new Error("Route not found");
-//   error.statusCode = 404;
-//   next(error); // Error middleware 
-// });
-
-// // ❗ Global Error Middleware 
-// app.use(errorHandler);
-
-// server.js or app.js ke last mein hona chahiye
 app.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(500).json({ success: false, message: err.message });

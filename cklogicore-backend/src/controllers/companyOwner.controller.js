@@ -67,27 +67,38 @@ export const getCompanies = catchAsync(async (req, res) => {
 export const updateCompany = catchAsync(async (req, res) => {
   const { id } = req.params;
 
+  const existingCompany = await CompanyOwner.findOne({ 
+    _id: id, 
+    accountId: req.user.accountId, 
+    isDeleted: false 
+  });
+
+  if (!existingCompany) {
+    return res.status(404).json({ success: false, message: "Company not found" });
+  }
+
+  // 🛡️ SECURITY:
+  if (!existingCompany.isActive) {
+    return res.status(400).json({ 
+      success: false, 
+      message: "Inactive company cannot be updated. Please activate it first." 
+    });
+  }
+
   let updateData = { ...req.body };
-  // Security: Prevent updating sensitive fields
   delete updateData._id;
   delete updateData.accountId;
   delete updateData.createdBy;
-  // If you want to lock mobile number, uncomment next line:
-  // delete updateData.mobile; 
 
   const flattenedData = flattenObject(updateData);
 
-  const company = await CompanyOwner.findOneAndUpdate(
-    { _id: id, accountId: req.user.accountId, isDeleted: false },
+  const updatedCompany = await CompanyOwner.findOneAndUpdate(
+    { _id: id, accountId: req.user.accountId, isDeleted: false, isActive: true }, // Filter safe side
     { $set: flattenedData },
     { new: true, runValidators: true }
   ).lean();
 
-  if (!company) {
-    return res.status(404).json({ success: false, message: "Company not found" });
-  }
-
-  res.json({ success: true, message: "Company details updated successfully", data: company });
+  res.json({ success: true, message: "Company details updated successfully", data: updatedCompany });
 });
 
 /* ================= TOGGLE STATUS ================= */
