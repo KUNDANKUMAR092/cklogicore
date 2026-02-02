@@ -38,8 +38,8 @@ export const tripApi = createApi({
     updateTrip: builder.mutation({
       query: ({ id, body }) => ({
         url: `/trips/${id}`,
-        method: "PATCH", // Backend route: router.patch("/:id")
-        body: body, // FormData for updates
+        method: "PATCH",
+        body: body, 
       }),
       invalidatesTags: ["Trip"],
     }),
@@ -61,6 +61,42 @@ export const tripApi = createApi({
       }),
       invalidatesTags: ["Trip"],
     }),
+
+    // ✅ UPDATE WORKFLOW STATUS
+    updateWorkflow: builder.mutation({
+      query: ({ id, status }) => ({
+        url: `/trips/${id}/workflow`,
+        method: "PATCH",
+        body: { status }, // JSON payload (pending, running, etc.)
+      }),
+      invalidatesTags: ["Trip"],
+    }),
+
+    // ✅ ADD CHALLANS (Separate Upload)
+    addChallans: builder.mutation({
+      query: ({ id, files }) => {
+        const formData = new FormData();
+        files.forEach((file) => formData.append("challans", file));
+        
+        return {
+          url: `/trips/${id}/challans`,
+          method: "POST",
+          body: formData,
+        };
+      },
+      invalidatesTags: ["Trip"],
+    }),
+
+    // ✅ REMOVE CHALLAN
+    removeChallan: builder.mutation({
+      query: ({ id, challanId }) => ({
+        url: `/trips/${id}/challans/${challanId}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["Trip"],
+    }),
+
+
   }),
 });
 
@@ -70,4 +106,7 @@ export const {
   useUpdateTripMutation,
   useToggleTripMutation,
   useDeleteTripMutation,
+  useUpdateWorkflowMutation,
+  useAddChallansMutation,
+  useRemoveChallanMutation,
 } = tripApi;

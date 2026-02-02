@@ -66,14 +66,7 @@ export const getTripFields = (accountType, currentId) => [
   { name: "totalTonLoad", label: "Total Ton Load", type: "number", required: true },
 
   // Input Rates
-  { 
-    name: "rates.companyRatePerTon", 
-    label: "Company Rate/Ton", 
-    type: "number", 
-    // Agar accountType 'company' hai toh hide/optional kardo
-    required: accountType !== "company",
-    hidden: accountType === "company" 
-  },
+  
   { 
     name: "rates.vehicleRatePerTon", 
     label: "Vehicle Rate/Ton", 
@@ -90,13 +83,80 @@ export const getTripFields = (accountType, currentId) => [
     required: accountType !== "supplier",
     hidden: accountType === "supplier"
   },
+  { 
+    name: "rates.companyRatePerTon", 
+    label: "Company Rate/Ton", 
+    type: "number", 
+    // Agar accountType 'company' hai toh hide/optional kardo
+    required: accountType !== "company",
+    hidden: accountType === "company" 
+  },
 
   // Financials (Expenses)
-  { name: "financials.advancePaid", label: "Advance Paid", type: "number" },
-  { name: "financials.dieselCost", label: "Diesel Cost", type: "number" },
-  { name: "financials.tollCost", label: "Toll Cost", type: "number" },
-  { name: "financials.driverExpense", label: "Driver Expense", type: "number" },
-  { name: "financials.otherExpense", label: "Other Expense", type: "number" },
+  
+  // 🏢 COMPANY PAYMENTS (What company paid/advanced)
+  { 
+    name: "financials.companyAdvance", 
+    label: "Advance by Company", 
+    type: "number",
+    hidden: accountType === "vehicle" 
+  },
+  { 
+    name: "financials.companyDiesel", 
+    label: "Diesel by Company", 
+    type: "number",
+    hidden: accountType === "vehicle" 
+  },
+  { 
+    name: "financials.companyTollCost", 
+    label: "Toll Cost By Company", 
+    type: "number",
+    hidden: accountType === "vehicle" 
+  },
+  { 
+    name: "financials.companyDriverExpense", 
+    label: "Driver Expense By Company", 
+    type: "number",
+    hidden: accountType === "vehicle" 
+  },
+  { 
+    name: "financials.companyOtherExpense", 
+    label: "Other Expense By Company", 
+    type: "number",
+    hidden: accountType === "vehicle" 
+  },
+
+  // 🤝 SUPPLIER PAYMENTS (What supplier paid/advanced)
+  { 
+    name: "financials.supplierAdvance", 
+    label: "Advance by Supplier", 
+    type: "number",
+    hidden: accountType === "vehicle" 
+  },
+  { 
+    name: "financials.supplierDiesel", 
+    label: "Diesel by Supplier", 
+    type: "number",
+    hidden: accountType === "vehicle" 
+  },
+  { 
+    name: "financials.supplierTollCost", 
+    label: "Toll Cost by Supplier", 
+    type: "number",
+    hidden: accountType === "vehicle" 
+  },
+  { 
+    name: "financials.supplierDriverExpense", 
+    label: "Driver Expense by Supplier", 
+    type: "number",
+    hidden: accountType === "vehicle" 
+  },
+  { 
+    name: "financials.supplierOtherExpense", 
+    label: "Other Expense By Supplier", 
+    type: "number",
+    hidden: accountType === "vehicle" 
+  },
 
   // 💰 Auto-Calculated Fields (Hamesha Disable rahenge)
   { name: "totalFinancials.totalAmountForCompany", label: "Total Company Pay", type: "number", disabled: true },

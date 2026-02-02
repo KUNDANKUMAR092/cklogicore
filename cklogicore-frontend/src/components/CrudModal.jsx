@@ -8,7 +8,7 @@ import { toInputDate } from "../utils/reUseableFn";
 ================================ */
 const isValidObject = (obj) => obj && typeof obj === "object" && !Array.isArray(obj);
 
-const CrudModal = ({ open, setOpen, fields = [], data, onSubmit }) => {
+const CrudModal = ({ open, setOpen, fields = [], data, onSubmit, onRemoveChallan }) => {
   const [form, setForm] = useState({});
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -115,6 +115,7 @@ const CrudModal = ({ open, setOpen, fields = [], data, onSubmit }) => {
             form={form}
             setForm={setForm}
             fields={Array.isArray(fields) ? fields : []}
+            onRemoveChallan={onRemoveChallan}
           />
 
           {/* Buttons */}

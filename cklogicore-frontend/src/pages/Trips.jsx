@@ -8,6 +8,9 @@ import {
   useUpdateTripMutation,
   useToggleTripMutation,
   useDeleteTripMutation,
+  useUpdateWorkflowMutation,
+  useAddChallansMutation,
+  useRemoveChallanMutation,
 } from "../features/trips/tripApi";
 
 import { useGetSuppliersQuery } from "../features/suppliers/supplierApi";
@@ -40,6 +43,9 @@ const TripPage = () => {
   const [updateTrip] = useUpdateTripMutation();
   const [toggleTrip] = useToggleTripMutation();
   const [deleteTrip] = useDeleteTripMutation();
+  const [updateWorkflow] = useUpdateWorkflowMutation();
+  const [addChallans] = useAddChallansMutation();
+  const [removeChallan] = useRemoveChallanMutation();
 
   // Data Memoization for CrudList
   const { safeList, total } = useMemo(() => ({
@@ -59,63 +65,221 @@ const TripPage = () => {
     }
   };
 
+  // const buildTripPayload = (form) => {
+  //   const formData = new FormData();
+
+  //   // 1. Basic Fields (Strings and Numbers)
+  //   formData.append("tripDate", form.tripDate || new Date().toISOString());
+  //   formData.append("loadingPoint", form.loadingPoint || "");
+  //   formData.append("unloadingPoint", form.unloadingPoint || "");
+  //   formData.append("totalTonLoad", form.totalTonLoad || 0);
+  //   formData.append("status", form.status || "pending");
+    
+  //   if (form.tripId) formData.append("tripId", form.tripId);
+
+  //   // 2. IDs Extraction (Ensuring only String IDs are sent)
+  //   // Zod regex string expect karta hai, object nahi.
+  //   const sId = user?.accountType === "SUPPLIER" ? entityId : (form.supplierId?._id || form.supplierId);
+  //   const cId = user?.accountType === "COMPANY" ? entityId : (form.companyId?._id || form.companyId);
+  //   const vId = user?.accountType === "VEHICLE" ? entityId : (form.vehicleId?._id || form.vehicleId);
+    
+  //   formData.append("supplierId", sId || "");
+  //   formData.append("companyId", cId || "");
+  //   formData.append("vehicleId", vId || "");
+
+  //   // 3. Nested Rates Handling
+  //   // Backend par rates.companyRatePerTon ban jayega
+  //   if (form.rates) {
+  //     Object.keys(form.rates).forEach((key) => {
+  //       const val = form.rates[key] || 0;
+  //       formData.append(`rates[${key}]`, val);
+  //     });
+  //   }
+
+  //   // 4. Nested Financials Handling
+  //   if (form.financials) {
+  //     Object.keys(form.financials).forEach((key) => {
+  //       const val = form.financials[key] || 0;
+  //       formData.append(`financials[${key}]`, val);
+  //     });
+  //   }
+
+  //   // 5. Files Handling (Challans)
+  //   // Agar CrudList ne files 'form.challans' me di hain
+  //   if (form.challans && Array.isArray(form.challans)) {
+  //     form.challans.forEach((file) => {
+  //       if (file instanceof File) {
+  //         formData.append("challans", file);
+  //       }
+  //     });
+  //   }
+
+  //   return formData;
+  // };
+
+  // const buildTripPayload = (form) => {
+  //   const formData = new FormData();
+
+  //   // 1. Basic Fields
+  //   formData.append("tripDate", form.tripDate || new Date().toISOString());
+  //   formData.append("loadingPoint", form.loadingPoint || "");
+  //   formData.append("unloadingPoint", form.unloadingPoint || "");
+  //   formData.append("totalTonLoad", form.totalTonLoad || 0);
+  //   formData.append("status", form.status || "pending");
+  //   if (form._id) formData.append("tripId", form._id);
+
+  //   // 2. ID Extraction (Refined)
+  //   const getID = (val) => (typeof val === 'object' ? val?._id : val) || "";
+    
+  //   formData.append("supplierId", user?.accountType === "SUPPLIER" ? entityId : getID(form.supplierId));
+  //   formData.append("companyId", user?.accountType === "COMPANY" ? entityId : getID(form.companyId));
+  //   formData.append("vehicleId", user?.accountType === "VEHICLE" ? entityId : getID(form.vehicleId));
+
+  //   // 3. Nested Objects (Rates & Financials)
+  //   // Backend standard: 'rates.companyRatePerTon' format for nested multer handling
+  //   if (form.rates) {
+  //     Object.entries(form.rates).forEach(([key, val]) => {
+  //       formData.append(`rates.${key}`, val || 0);
+  //     });
+  //   }
+  //   if (form.financials) {
+  //     Object.entries(form.financials).forEach(([key, val]) => {
+  //       formData.append(`financials.${key}`, val || 0);
+  //     });
+  //   }
+
+  //   // 4. Files Handling (Challans)
+  //   if (form.challans && Array.isArray(form.challans)) {
+  //     form.challans.forEach((file) => {
+  //       // Agar purani image URL hai toh ignore karein, sirf new File objects append karein
+  //       if (file instanceof File) {
+  //         formData.append("challans", file);
+  //       }
+  //     });
+  //   }
+
+  //   return formData;
+  // };
+
+
   const buildTripPayload = (form) => {
     const formData = new FormData();
 
-    // 1. Basic Fields (Strings and Numbers)
-    formData.append("tripDate", form.tripDate || new Date().toISOString());
-    formData.append("loadingPoint", form.loadingPoint || "");
-    formData.append("unloadingPoint", form.unloadingPoint || "");
-    formData.append("totalTonLoad", form.totalTonLoad || 0);
-    formData.append("status", form.status || "pending");
+    // 1. Basic & ID Fields Handling
+    const basicFields = [
+      "tripDate", "loadingPoint", "unloadingPoint", 
+      "totalTonLoad", "status", "tripId", "_id"
+    ];
     
-    if (form.tripId) formData.append("tripId", form.tripId);
+    basicFields.forEach(key => {
+      if (form[key] !== undefined) formData.append(key, form[key]);
+    });
 
-    // 2. IDs Extraction (Ensuring only String IDs are sent)
-    // Zod regex string expect karta hai, object nahi.
-    const sId = user?.accountType === "SUPPLIER" ? entityId : (form.supplierId?._id || form.supplierId);
-    const cId = user?.accountType === "COMPANY" ? entityId : (form.companyId?._id || form.companyId);
-    const vId = user?.accountType === "VEHICLE" ? entityId : (form.vehicleId?._id || form.vehicleId);
-    
-    formData.append("supplierId", sId || "");
-    formData.append("companyId", cId || "");
-    formData.append("vehicleId", vId || "");
+    // 2. ID Extraction (Refined)
+    const getID = (val) => (typeof val === 'object' ? val?._id : val) || "";
+    formData.append("supplierId", getID(form.supplierId));
+    formData.append("companyId", getID(form.companyId));
+    formData.append("vehicleId", getID(form.vehicleId));
 
-    // 3. Nested Rates Handling
-    // Backend par rates.companyRatePerTon ban jayega
-    if (form.rates) {
-      Object.keys(form.rates).forEach((key) => {
-        const val = form.rates[key] || 0;
-        formData.append(`rates[${key}]`, val);
-      });
-    }
+    // 3. Nested Data Handling (Rates & Financials)
+    // Hum poore 'form' object ko scan karenge un keys ke liye jinme '.' hai
+    Object.keys(form).forEach(key => {
+      // Agar key direct 'rates.xxx' format mein hai (jo CrudForm se aa sakti hai)
+      if (key.includes('.')) {
+        formData.append(key, form[key]);
+      } 
+      // Agar key object hai (jo initial state se aa sakti hai)
+      else if ((key === 'rates' || key === 'financials') && typeof form[key] === 'object') {
+        Object.entries(form[key]).forEach(([subKey, val]) => {
+          formData.append(`${key}.${subKey}`, val || 0);
+        });
+      }
+    });
 
-    // 4. Nested Financials Handling
-    if (form.financials) {
-      Object.keys(form.financials).forEach((key) => {
-        const val = form.financials[key] || 0;
-        formData.append(`financials[${key}]`, val);
-      });
-    }
-
-    // 5. Files Handling (Challans)
-    // Agar CrudList ne files 'form.challans' me di hain
+    // 4. Files Handling
     if (form.challans && Array.isArray(form.challans)) {
       form.challans.forEach((file) => {
-        if (file instanceof File) {
-          formData.append("challans", file);
-        }
+        if (file instanceof File) formData.append("challans", file);
       });
     }
 
     return formData;
   };
 
-  const handleCreate = (form) => 
-    handleMutation(createTrip, buildTripPayload(form), "Trip created successfully");
+  // const handleCreate = (form) => 
+  //   handleMutation(createTrip, buildTripPayload(form), "Trip created successfully");
 
-  const handleUpdate = (id, form) => 
-    handleMutation(updateTrip, { id, body: buildTripPayload(form) }, "Trip updated successfully");
+  // const handleUpdate = (id, form) => 
+  //   handleMutation(updateTrip, { id, body: buildTripPayload(form) }, "Trip updated successfully");
+
+  // TripPage.jsx
+
+  // const handleUpdate = async (id, form) => {
+  //   try {
+  //     // 1. Payload build karein (vahi function jo create mein use kiya)
+  //     const payload = buildTripPayload(form);
+
+  //     // 2. Mutation call karein (id aur body dono bhej rahe hain)
+  //     await updateTrip({ id, body: payload }).unwrap();
+      
+  //     toast.success("Trip updated successfully");
+  //     setOpen(false);
+  //   } catch (err) {
+  //     toast.error(err?.data?.message || "Update failed");
+  //   }
+  // };
+
+  const handleCreate = async (form) => {
+    try {
+      // 1. Data se challans hata kar pehle Trip create karein
+      const payload = buildTripPayload(form);
+      payload.delete("challans"); 
+
+      const result = await createTrip(payload).unwrap();
+      const newTripId = result.data?._id;
+
+      // 2. Identify strictly NEW files (Sirf naye File objects)
+      const newFiles = Array.isArray(form.challans) 
+        ? form.challans.filter(f => f instanceof File) 
+        : [];
+
+      console.log(form, newTripId, newFiles)
+      // 3. Agar data hai, tabhi addChallans API call hogi
+      if (newFiles.length > 0 && newTripId) {
+        // Aapki API ({ id, files }) format mang rahi hai
+        await addChallans({ id: newTripId, files: newFiles }).unwrap();
+      }
+
+      toast.success("Trip created successfully!");
+      setOpen(false);
+    } catch (err) {
+      toast.error(err?.data?.message || "Create failed");
+    }
+  };
+
+  const handleUpdate = async (id, form) => {
+    try {
+      // 1. Basic Update (JSON/FormData bina files ke)
+      const payload = buildTripPayload(form);
+      payload.delete("challans");
+      await updateTrip({ id, body: payload }).unwrap();
+
+      // 2. Check for NEWLY selected files only
+      const newFiles = Array.isArray(form.challans) 
+        ? form.challans.filter(f => f instanceof File) 
+        : [];
+
+      // 3. API tabhi trigger hogi jab koi naya file select hua ho
+      if (newFiles.length > 0) {
+        await addChallans({ id, files: newFiles }).unwrap();
+      }
+
+      toast.success("Trip updated!");
+      setOpen(false);
+    } catch (err) {
+      toast.error(err?.data?.message || "Update failed");
+    }
+  };
 
   const handleToggale = (id, status) => 
     handleMutation(toggleTrip, { id, isActive: status }, "Status updated");
@@ -187,6 +351,39 @@ const TripPage = () => {
     setOpen(true);
   };
 
+  // const handleRemoveChallan = async (tripId, challanId) => {
+  //   if (window.confirm("Permanent delete this challan?")) {
+  //     try {
+  //       await removeChallan({ id: tripId, challanId }).unwrap();
+  //       toast.success("Challan deleted");
+  //     } catch (err) {
+  //       toast.error(err?.data?.message || "Delete failed");
+  //     }
+  //   }
+  // };
+
+  // TripPage.jsx mein ye function update karein
+  const handleRemoveChallan = async (tripId, challanId, setForm) => {
+    if (window.confirm("Are you sure you want to delete this challan?")) {
+      try {
+        // 1. API Call
+        await removeChallan({ id: tripId, challanId }).unwrap();
+        
+        // 2. 🔥 Local State Update (Modal close kiye bina UI sync karne ke liye)
+        if (setForm) {
+          setForm((prev) => ({
+            ...prev,
+            challans: prev.challans.filter((c) => c._id !== challanId),
+          }));
+        }
+        
+        toast.success("Challan deleted successfully");
+      } catch (err) {
+        toast.error(err?.data?.message || "Failed to delete challan");
+      }
+    }
+  };
+
   return (
     <div className="w-full min-w-0 overflow-hidden">
       <div className="flex items-center justify-between mb-4">
@@ -215,6 +412,8 @@ const TripPage = () => {
         page={page}
         setPage={setPage}
         limit={limit}
+        // onRemoveChallan={handleRemoveChallan}
+        onRemoveChallan={(tripId, challanId, setForm) => handleRemoveChallan(tripId, challanId, setForm)}
       />
     </div>
   );
