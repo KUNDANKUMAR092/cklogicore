@@ -1,0 +1,29 @@
+{
+  "name": "cklogicore",
+  "version": "1.0.0",
+  "description": "Full-stack deployment for cklogicore",
+  "main": "index.js",
+  "private": true,
+  "scripts": {
+    "install:all": "npm install && npm install --prefix cklogicore-backend && npm install --prefix cklogicore-frontend",
+    "build:all": "npm run build --prefix cklogicore-frontend",
+    "dev": "concurrently \"npm run dev --prefix cklogicore-backend\" \"npm run dev --prefix cklogicore-frontend\"",
+    "start": "npm run start --prefix cklogicore-backend",
+    "render-build": "npm run install:all && npm run build:all"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/KUNDANKUMAR092/cklogicore.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/KUNDANKUMAR092/cklogicore/issues"
+  },
+  "homepage": "https://github.com/KUNDANKUMAR092/cklogicore#readme",
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  }
+}
