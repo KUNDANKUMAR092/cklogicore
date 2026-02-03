@@ -123,7 +123,7 @@ export default function Topbar({ toggleSidebar }) {
               <FaUser size={14} /> Profile
             </button>
 
-            <button onClick={() => navigate("/settings")} className="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-600 hover:bg-blue-50 hover:text-blue-600 transition cursor-pointer">
+            {/* <button onClick={() => navigate("/settings")} className="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-600 hover:bg-blue-50 hover:text-blue-600 transition cursor-pointer">
               <FaCog size={14} /> Settings
             </button>
 
@@ -133,7 +133,7 @@ export default function Topbar({ toggleSidebar }) {
 
             <button onClick={() => navigate("/contact")} className="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-600 hover:bg-blue-50 hover:text-blue-600 transition cursor-pointer">
               <FaPhoneAlt size={14} /> Contact Us
-            </button>
+            </button> */}
 
             <div className="border-t border-gray-50 mt-1 pt-1">
               <button
