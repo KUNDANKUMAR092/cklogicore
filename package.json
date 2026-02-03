@@ -8,8 +8,8 @@
     "install:all": "npm install && npm install --prefix cklogicore-backend && npm install --prefix cklogicore-frontend",
     "build:all": "cd cklogicore-frontend && npm run build",
     "dev": "concurrently \"npm run dev --prefix cklogicore-backend\" \"npm run dev --prefix cklogicore-frontend\"",
-    "render-build": "npm install && cd cklogicore-backend && npm install && cd ../cklogicore-frontend && npm install && npx vite build",
-    "start": "cd cklogicore-backend && node server.js"
+    "start": "cd cklogicore-backend && node server.js",
+    "render-build": "npm install && cd cklogicore-backend && npm install && cd ../cklogicore-frontend && npm install && npm run build"
   },
   "repository": {
     "type": "git",
