@@ -9,7 +9,7 @@
     "build:all": "cd cklogicore-frontend && npm run build",
     "dev": "concurrently \"npm run dev --prefix cklogicore-backend\" \"npm run dev --prefix cklogicore-frontend\"",
     "start": "cd cklogicore-backend && node server.js",
-    "render-build": "npm install && cd cklogicore-backend && npm install && cd ../cklogicore-frontend && npm install && npx vite build cklogicore-frontend --config cklogicore-frontend/vite.config.js --outDir dist"
+    "render-build": "npm install && npm install --prefix cklogicore-backend && npm install --prefix cklogicore-frontend && npx vite build cklogicore-frontend --config cklogicore-frontend/vite.config.js"
   },
   "repository": {
     "type": "git",

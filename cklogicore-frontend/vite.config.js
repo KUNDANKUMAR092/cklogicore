@@ -7,6 +7,9 @@ export default defineConfig({
     react(),
     tailwindcss()
   ],
+  build: {
+    outDir: 'dist', // Ye frontend folder ke andar hi dist banayega
+  },
   server: {
     proxy: {
       // Jab bhi frontend '/api' hit karega, ye use backend server (port 5000) par redirect kar dega
