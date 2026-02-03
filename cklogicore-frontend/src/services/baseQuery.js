@@ -1,11 +1,10 @@
 import { fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 import { setCredentials, logout } from "../features/auth/authSlice";
 
-// Ek simple flag banaiye refresh track karne ke liye
-let isRefreshing = false;
+const baseURL = import.meta.env.MODE === 'production'  ? '/api/v1'  : 'http://localhost:5000/api/v1';
 
 const baseQuery = fetchBaseQuery({
-  baseUrl: import.meta.env.VITE_API_URL,
+  baseUrl: baseURL,
   credentials: "include",
   prepareHeaders: (headers, { getState }) => {
     const token = getState().auth.accessToken;
