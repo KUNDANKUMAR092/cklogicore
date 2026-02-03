@@ -36,6 +36,7 @@ import Loader from "../components/Loader";
 const COLORS = ["#10b981", "#3b82f6", "#6366f1", "#f59e0b"]; // Colors matched to cards
 
 export default function Dashboard() {
+  const baseURL = import.meta.env.MODE === 'production'  ? '/api/v1'  : 'http://localhost:5000/api/v1';
   // 1. REDUX STATE (Auth Token)
   const { accessToken } = useSelector((state) => state.auth);
 
@@ -75,9 +76,8 @@ export default function Dashboard() {
         ...filters,
         target: exportTarget,
       }).toString();
-      const baseUrl = "http://localhost:5000/api/v1";
       const res = await axios.get(
-        `${baseUrl}/excel/export-trips?${queryParams}`,
+        `${baseURL}/excel/export-trips?${queryParams}`,
         {
           headers: { Authorization: `Bearer ${accessToken}` },
           responseType: "blob",
