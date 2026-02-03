@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from "react";
 import CrudForm from "./CrudForm";
 import { toInputDate } from "../utils/reUseableFn";
+import { useLocation } from "react-router-dom";
 
 /* ================================
    Safe Helper Function
@@ -9,9 +10,14 @@ import { toInputDate } from "../utils/reUseableFn";
 const isValidObject = (obj) => obj && typeof obj === "object" && !Array.isArray(obj);
 
 const CrudModal = ({ open, setOpen, fields = [], data, onSubmit, onRemoveChallan }) => {
+  const location = useLocation();
+  const pageName = location.pathname.split("/").pop().replace("s", "");
+  const formattedName = pageName.charAt(0).toUpperCase() + pageName.slice(1);
+
   const [form, setForm] = useState({});
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  
 
   /* ================================
      Handle Incoming Data Safely
@@ -93,12 +99,12 @@ const CrudModal = ({ open, setOpen, fields = [], data, onSubmit, onRemoveChallan
      UI
   ================================ */
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
+    <div className="fixed inset-0 bg-black/50 flex justify-center items-center z-50">
       <div className="bg-white rounded-lg shadow-lg w-full max-w-3xl p-6">
 
         {/* Title */}
         <h2 className="text-xl font-bold mb-4">
-          {isValidObject(data) ? "Edit" : "Add"}
+          {isValidObject(data) ? `Edit ${formattedName}` : `Add ${formattedName}`}
         </h2>
 
         {/* Error Message */}
@@ -123,7 +129,7 @@ const CrudModal = ({ open, setOpen, fields = [], data, onSubmit, onRemoveChallan
             <button
               type="button"
               onClick={handleClose}
-              className="px-4 py-2 rounded bg-gray-300 hover:bg-gray-400"
+              className="px-4 py-2 rounded bg-gray-300 hover:bg-gray-400 cursor-pointer"
               disabled={loading}
             >
               Cancel
@@ -132,15 +138,15 @@ const CrudModal = ({ open, setOpen, fields = [], data, onSubmit, onRemoveChallan
             <button
               type="submit"
               disabled={loading}
-              className={`px-4 py-2 rounded text-white ${
+              className={`px-4 py-2 rounded text-white cursor-pointer ${
                 loading ? "bg-blue-400 cursor-not-allowed" : "bg-blue-600 hover:bg-blue-700"
               }`}
             >
               {loading
                 ? "Please wait..."
                 : isValidObject(data)
-                ? "Update"
-                : "Add"}
+                ? `Update ${formattedName}`
+                : `Add ${formattedName}`}
             </button>
           </div>
         </form>

@@ -250,8 +250,8 @@ const TripPage = () => {
     <div className="w-full min-w-0 overflow-hidden">
       <div className="flex items-center justify-between mb-4">
         <h1 className="text-2xl font-bold">Trips</h1>
-        <button onClick={handleAddClick} className="px-4 py-1 bg-blue-500 text-white rounded flex items-center hover:bg-blue-600 transition">
-          <FaPlus size={12} className="mr-1" /> Add
+        <button onClick={handleAddClick} className="px-4 py-1 bg-blue-500 text-white rounded flex items-center hover:bg-blue-600 transition cursor-pointer">
+          <FaPlus size={12} className="mr-1" /> Add Trips
         </button>
       </div>
 

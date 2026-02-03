@@ -110,29 +110,49 @@ export default function CrudList({
   /* ================= 3. SUB-COMPONENTS ================= */
   
   const MobileView = () => (
-    <div className="space-y-4 md:hidden">
+    /* 1. Added w-full and overflow-hidden to the main container */
+    <div className="space-y-4 md:hidden w-full overflow-hidden">
       {safeData.map((row, index) => (
-        <div key={row?._id || index} className="bg-white border rounded-lg p-4 shadow-sm">
+        <div 
+          key={row?._id || index} 
+          /* 2. Added break-inside-avoid to prevent card breaking */
+          className="bg-white border rounded-lg p-4 shadow-sm w-full box-border"
+        >
           {safeFields.map((field) => (
-            <div key={field?.name} className="flex justify-between text-sm py-1 border-b last:border-b-0">
-              <span className="font-medium text-gray-600">{field?.label}</span>
-              <span className="text-gray-800 text-right max-w-[60%] break-words">{renderValue(row, field)}</span>
+            <div 
+              key={field?.name} 
+              /* 3. Added flex-wrap for long labels and values */
+              className="flex flex-wrap justify-between items-start text-sm py-2 border-b last:border-b-0 gap-2"
+            >
+              <span className="font-medium text-gray-600 min-w-[100px]">{field?.label}</span>
+              <span className="text-gray-800 text-right flex-1 overflow-hidden">
+                {renderValue(row, field)}
+              </span>
             </div>
           ))}
-          <div className="flex gap-3 mt-3 justify-end items-center">
+
+          {/* 4. Action buttons - flex-wrap ensures they stack if too many */}
+          <div className="flex flex-wrap gap-3 mt-4 justify-end items-center">
             {onEdit && (
               <button 
                 onClick={() => { setEditData(row); setOpen(true); }} 
-                className="px-3 py-1 bg-blue-500 text-white rounded text-sm cursor-pointer"
+                className="px-4 py-2 bg-blue-600 text-white rounded-md text-sm active:bg-blue-700 transition-colors"
               >
                 Edit
               </button>
             )}
-            {onToggale && <ToggleSwitch enabled={row.isActive ?? !row.isDeleted} onChange={(val) => onToggale?.(row?._id, val)} />}
+            {onToggale && (
+              <div className="flex items-center scale-90">
+                <ToggleSwitch 
+                  enabled={row.isActive ?? !row.isDeleted} 
+                  onChange={(val) => onToggale?.(row?._id, val)} 
+                />
+              </div>
+            )}
             {onDelete && (
               <button 
                 onClick={() => onDelete?.(row?._id)} 
-                className="px-3 py-1 bg-red-500 text-white rounded text-sm cursor-pointer"
+                className="px-4 py-2 bg-red-600 text-white rounded-md text-sm active:bg-red-700 transition-colors"
               >
                 Delete
               </button>
@@ -141,7 +161,7 @@ export default function CrudList({
         </div>
       ))}
     </div>
-  );
+);
 
   const DesktopView = () => {
     return (

@@ -129,7 +129,7 @@ const ProfilePage = () => {
 
   return (
     <DataHandler isLoading={isLoading} error={error} isFetching={isFetching}>
-      <div className="max-w-6xl mx-auto p-4 md:p-6">
+      <div className="max-w-6xl mx-auto md:p-6">
         
         {/* Header Card */}
         <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden mb-6">

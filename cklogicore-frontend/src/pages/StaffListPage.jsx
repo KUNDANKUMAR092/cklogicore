@@ -68,7 +68,7 @@ const StaffListPage = () => {
         <h1 className="text-2xl font-bold">Staff Directory</h1>
         <button
           onClick={() => setOpen(true)}
-          className="px-4 py-1 bg-blue-500 text-white rounded flex items-center hover:bg-blue-600 transition disabled:opacity-50"
+          className="px-4 py-1 bg-blue-500 text-white rounded flex items-center hover:bg-blue-600 transition disabled:opacity-50 cursor-pointer"
           disabled={isLoading}
         >
           <FaPlus size={12} className="mr-1" /> Add Staff

@@ -47,7 +47,7 @@ export default function Sidebar({ sidebarOpen, toggleSidebar }) {
     <>
       <div
         className={`fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden transition-opacity duration-300 ${
-          sidebarOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+          sidebarOpen ? "opacity-50 pointer-events-auto" : "opacity-0 pointer-events-none"
         }`}
         onClick={toggleSidebar}
       ></div>

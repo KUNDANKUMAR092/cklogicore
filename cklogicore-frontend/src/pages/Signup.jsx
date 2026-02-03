@@ -120,8 +120,8 @@ export default function Signup() {
               className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-2xl font-bold text-gray-700 focus:ring-2 focus:ring-blue-500 outline-none appearance-none cursor-pointer"
             >
               <option value="SUPPLIER">SUPPLIER</option>
-              <option value="COMPANY">COMPANY</option>
-              <option value="VEHICLE">VEHICLE OWNER</option>
+              {/* <option value="COMPANY">COMPANY</option>
+              <option value="VEHICLE">VEHICLE OWNER</option> */}
             </select>
           </div>
 
