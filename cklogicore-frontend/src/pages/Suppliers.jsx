@@ -81,8 +81,9 @@ const SupplierPage = () => {
         total={total}
         fields={supplierFields}
         isLoading={isLoading}
-        error={error}
+        isFetching={isFetching}
         loading={isFetching}
+        error={error}
         onCreate={handleCreate}
         onUpdate={handleUpdate}
         onToggale={handleToggal}

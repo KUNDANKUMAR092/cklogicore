@@ -35,7 +35,7 @@ const TripPage = () => {
   const { data: vehicleData } = useGetVehiclesQuery({ limit: 1000 });
 
   // 2. Main Trip Data
-  const { data, isLoading, isFetching, error } = useGetTripsQuery({ page, limit, search });
+  const { data, isLoading, isFetching, error } = useGetTripsQuery({ page, limit, search }, { refetchOnMountOrArgChange: true });
 
   const [createTrip] = useCreateTripMutation();
   const [updateTrip] = useUpdateTripMutation();
@@ -263,6 +263,7 @@ const TripPage = () => {
         setPage={setPage}
         fields={fieldsWithDropdowns}
         isLoading={isLoading}
+        isFetching={isFetching}
         loading={isFetching}
         error={error}
         onCreate={handleCreate}

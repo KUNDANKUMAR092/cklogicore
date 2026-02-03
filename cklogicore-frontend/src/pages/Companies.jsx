@@ -81,8 +81,9 @@ const CompanyPage = () => {
         total={total}
         fields={companyFields}
         isLoading={isLoading}
-        error={error}
+        isFetching={isFetching}
         loading={isFetching}
+        error={error}
         onCreate={handleCreate}
         onUpdate={handleUpdate}
         onToggale={handleToggale}

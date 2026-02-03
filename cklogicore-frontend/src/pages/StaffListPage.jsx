@@ -81,8 +81,9 @@ const StaffListPage = () => {
         total={total}
         fields={userFields}
         isLoading={isLoading}
-        error={error}
+        isFetching={isFetching}
         loading={isFetching}
+        error={error}
         onCreate={handleCreate}
         onUpdate={handleUpdate}
         onDelete={handleDelete}

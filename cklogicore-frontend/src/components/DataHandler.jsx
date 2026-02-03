@@ -1,9 +1,9 @@
 import React from "react";
 import Loader from "./Loader";
 
-const DataHandler = ({ loading, error, children }) => {
+const DataHandler = ({ loading, error, children, isFetching }) => {
 
-  if (loading) {
+  if (loading || isFetching) {
     return (
       <div className="flex flex-col items-center justify-center p-10 min-h-[200px]">
         <Loader />
@@ -12,7 +12,7 @@ const DataHandler = ({ loading, error, children }) => {
     );
   }
 
-  if (error) {
+  if (error || isFetching) {
     return (
       <div className="p-6 bg-red-50 text-red-600 rounded-lg border border-red-100 text-center my-4">
         <p className="font-semibold">Oops! Something went wrong.</p>

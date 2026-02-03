@@ -1,22 +1,21 @@
 import React, { useState, useRef, useEffect, useMemo } from "react";
 import { useSelector } from "react-redux";
-import { useLocation, useNavigate } from "react-router-dom";
-import { formatPathName, formatRole } from "../utils/reUseableFn";
-import { FaUserCircle, FaCog, FaInfoCircle, FaPhoneAlt, FaUser, FaSignOutAlt } from "react-icons/fa";
+import { useNavigate } from "react-router-dom";
+import { FaCog, FaInfoCircle, FaPhoneAlt, FaUser, FaSignOutAlt } from "react-icons/fa";
+import { logout } from "../features/auth/authSlice";
+import { useAppDispatch } from "../app/hooks";
 
 export default function Topbar({ toggleSidebar }) {
   const { user } = useSelector((state) => state.auth);
-  const location = useLocation();
   const navigate = useNavigate();
+  const dispatch = useAppDispatch()
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
 
   // Logout Handler
   const handleLogout = () => {
-    localStorage.removeItem("user");
-    localStorage.removeItem("accessToken");
     dispatch(logout());
-    window.location.href = "/login";
+    navigate("/login", { replace: true })
   };
 
   // Dropdown ko bahar click karne par close karne ke liye
@@ -120,26 +119,26 @@ export default function Topbar({ toggleSidebar }) {
               <p className="text-[11px] text-gray-500 truncate">{user?.email}</p>
             </div>
 
-            <button onClick={() => navigate("/profile")} className="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-600 hover:bg-blue-50 hover:text-blue-600 transition">
+            <button onClick={() => navigate("/profile")} className="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-600 hover:bg-blue-50 hover:text-blue-600 transition cursor-pointer">
               <FaUser size={14} /> Profile
             </button>
 
-            <button onClick={() => navigate("/settings")} className="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-600 hover:bg-blue-50 hover:text-blue-600 transition">
+            <button onClick={() => navigate("/settings")} className="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-600 hover:bg-blue-50 hover:text-blue-600 transition cursor-pointer">
               <FaCog size={14} /> Settings
             </button>
 
-            <button onClick={() => navigate("/about")} className="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-600 hover:bg-blue-50 hover:text-blue-600 transition">
+            <button onClick={() => navigate("/about")} className="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-600 hover:bg-blue-50 hover:text-blue-600 transition cursor-pointer">
               <FaInfoCircle size={14} /> About Us
             </button>
 
-            <button onClick={() => navigate("/contact")} className="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-600 hover:bg-blue-50 hover:text-blue-600 transition">
+            <button onClick={() => navigate("/contact")} className="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-600 hover:bg-blue-50 hover:text-blue-600 transition cursor-pointer">
               <FaPhoneAlt size={14} /> Contact Us
             </button>
 
             <div className="border-t border-gray-50 mt-1 pt-1">
               <button
                 onClick={handleLogout}
-                className="w-full flex items-center gap-3 px-4 py-2 text-sm text-red-500 hover:bg-red-50 transition font-medium"
+                className="w-full flex items-center gap-3 px-4 py-2 text-sm text-red-500 hover:bg-red-50 transition font-medium cursor-pointer"
               >
                 <FaSignOutAlt size={14} /> Logout
               </button>

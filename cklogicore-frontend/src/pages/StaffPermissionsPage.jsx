@@ -70,7 +70,7 @@ const StaffPermissionsPage = () => {
       </div>
 
       {/* Data Table */}
-      <DataHandler loading={isLoading} error={error}>
+      <DataHandler loading={isLoading} error={error} isFetching={isFetching}>
         <div className="bg-white border border-gray-200 rounded-lg shadow-sm overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead className="bg-gray-50">

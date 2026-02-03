@@ -84,8 +84,9 @@ const VehiclePage = () => {
         total={total}
         fields={vehicleFields}
         isLoading={isLoading}
-        error={error}
+        isFetching={isFetching}
         loading={isFetching}
+        error={error}
         onCreate={handleCreate}
         onUpdate={handleUpdate}
         onToggale={handleToggale}

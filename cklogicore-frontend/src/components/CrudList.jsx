@@ -24,8 +24,8 @@ export default function CrudList({
   setPage,
   limit,
   total,
-  loading = false,
   isLoading,
+  isFetching,
   error,
   onRemoveChallan,
 }) {
@@ -260,7 +260,7 @@ export default function CrudList({
         </div>
       </div>
 
-      <DataHandler loading={isLoading} error={error}>
+      <DataHandler loading={isLoading} isFetching={isFetching} error={error}>
         {safeData.length > 0 ? (
           <>
             <MobileView />
