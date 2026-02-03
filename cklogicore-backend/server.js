@@ -22,7 +22,7 @@ connectDB();
 
 // Frontend build folder ka path (Parent folder se cklogicore-frontend/dist tak)
 // const frontendBuildPath = path.join(__dirname, "../cklogicore-frontend/dist");
-const frontendBuildPath = path.resolve(__dirname, "../cklogicore-frontend/dist");
+const frontendBuildPath = path.resolve(__dirname, "../dist");
 
 app.use(express.static(frontendBuildPath));
 
