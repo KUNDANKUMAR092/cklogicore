@@ -28,7 +28,6 @@ if (process.env.NODE_ENV === "production") {
     app.use(express.static(frontendBuildPath));
 
     // 2. Kisi bhi non-API route par frontend ki index.html dikhayein
-    
     // Isse React Router live hone par break nahi hoga
     app.get("/(.*)", (req, res) => {
         // Agar request URL '/api' se start nahi hota, toh index.html bhejein
