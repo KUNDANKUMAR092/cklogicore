@@ -6,7 +6,7 @@
   "private": true,
   "scripts": {
     "install:all": "npm install && npm install --prefix cklogicore-backend && npm install --prefix cklogicore-frontend",
-    "build:all": "npm run build --prefix cklogicore-frontend",
+    "build:all": "cd cklogicore-frontend && npm install && npm run build",
     "dev": "concurrently \"npm run dev --prefix cklogicore-backend\" \"npm run dev --prefix cklogicore-frontend\"",
     "start": "npm run start --prefix cklogicore-backend",
     "render-build": "npm run install:all && npm run build:all"
