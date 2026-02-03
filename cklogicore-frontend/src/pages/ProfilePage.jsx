@@ -137,7 +137,7 @@ const ProfilePage = () => {
           {/* Banner Section */}
           <div className="h-48 md:h-64 bg-gray-200 relative group">
             {user?.bannerImage ? (
-              <img src={`${baseUrl}/${user.bannerImage}`} alt="bannerImage" className="w-full h-full object-cover" onError={(e) => { e.target.src = "https://via.placeholder.com/150"; }} />
+              <img src={`${baseUrl}${user.bannerImage}`} alt="bannerImage" className="w-full h-full object-cover" onError={(e) => { e.target.src = "https://via.placeholder.com/150"; }} />
             ) : (
               <div className="w-full h-full bg-gradient-to-r from-blue-700 to-indigo-600"></div>
             )}
@@ -153,7 +153,7 @@ const ProfilePage = () => {
               <div className="relative">
                 <div className="w-40 h-40 rounded-3xl border-8 border-white bg-gray-100 overflow-hidden shadow-2xl flex items-center justify-center">
                   {user?.avatar ? (
-                    <img src={`${baseUrl}/${user.avatar}`} alt="Avatar" className="w-full h-full object-cover" onError={(e) => { e.target.src = "https://via.placeholder.com/150"; }} />
+                    <img src={`${baseUrl}${user.avatar}`} alt="Avatar" className="w-full h-full object-cover" onError={(e) => { e.target.src = "https://via.placeholder.com/150"; }} />
                   ) : (
                     <span className="text-6xl font-bold text-blue-600">{user?.name?.charAt(0)}</span>
                   )}

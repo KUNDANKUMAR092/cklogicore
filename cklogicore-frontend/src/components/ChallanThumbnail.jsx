@@ -2,6 +2,8 @@ import React from "react";
 import { FaFilePdf, FaFileAlt, FaTimesCircle } from "react-icons/fa";
 
 const ChallanThumbnail = ({ file, index, onDelete, tripId }) => {
+  const baseUrl = import.meta.env.MODE === 'production'  ? '/'  : import.meta.env.VITE_BASE_URL;
+  // const baseUrl = "http://localhost:5000/"; 
   if (!file) return null;
   
   let src = "";
@@ -10,7 +12,6 @@ const ChallanThumbnail = ({ file, index, onDelete, tripId }) => {
   const isExisting = !!file._id; 
 
   if (file && typeof file === 'object' && file.fileUrl) {
-    const baseUrl = "http://localhost:5000/"; 
     src = file.fileUrl.startsWith("http") ? file.fileUrl : `${baseUrl}${file.fileUrl}`;
     name = file.fileName || "document";
   } else if (file instanceof File) {
