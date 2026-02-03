@@ -6,10 +6,10 @@
   "private": true,
   "scripts": {
     "install:all": "npm install && npm install --prefix cklogicore-backend && npm install --prefix cklogicore-frontend",
-    "build:all": "cd cklogicore-frontend && ../node_modules/.bin/vite build",
+    "build:all": "cd cklogicore-frontend && npm run build",
     "dev": "concurrently \"npm run dev --prefix cklogicore-backend\" \"npm run dev --prefix cklogicore-frontend\"",
-    "start": "npm run start --prefix cklogicore-backend",
-    "render-build": "npm run install:all && npm run build:all"
+    "render-build": "npm install && cd cklogicore-backend && npm install && cd ../cklogicore-frontend && npm install && npm run build",
+    "start": "cd cklogicore-backend && node server.js"
   },
   "repository": {
     "type": "git",
