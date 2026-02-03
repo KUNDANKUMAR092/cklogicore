@@ -22,25 +22,22 @@ connectDB();
 
 // Frontend build folder ka path (Parent folder se cklogicore-frontend/dist tak)
 // const frontendBuildPath = path.join(__dirname, "../cklogicore-frontend/dist");
-const frontendBuildPath = path.resolve(__dirname, "../../cklogicore-frontend/dist");
+const frontendBuildPath = path.resolve(__dirname, "../cklogicore-frontend/dist");
+
+app.use(express.static(frontendBuildPath));
 
 if (process.env.NODE_ENV === "production") {
-    // 1. Static files serve karein (CSS, JS, Images)
-    app.use(express.static(frontendBuildPath));
-
-    // 2. Kisi bhi non-API route par frontend ki index.html dikhayein
-    // Isse React Router live hone par break nahi hoga
-    // app.get("*", (req, res) => {
-    //     // Agar request URL '/api' se start nahi hota, toh index.html bhejein
-    //     if (!req.url.startsWith('/api')) {
-    //         res.sendFile(path.resolve(frontendBuildPath, "index.html"));
-    //     }
-    // });
+    // Wildcard route: API ke ilawa baaki sab index.html par bhej do
     app.get(/^\/(?!api).*/, (req, res) => {
-      res.sendFile(path.resolve(frontendBuildPath, "index.html"));
+        res.sendFile(path.join(frontendBuildPath, "index.html"), (err) => {
+            if (err) {
+                // Agar file nahi milti toh error log karein taaki dashboard par dikhe
+                console.error("Error sending index.html:", err);
+                res.status(500).send("Frontend build not found. Please check paths.");
+            }
+        });
     });
 } else {
-    // Local Development mein sirf ek basic message (Optional)
     app.get("/", (req, res) => {
         res.send("API is running in development mode...");
     });
