@@ -12,7 +12,8 @@ import { formatDate } from "../utils/reUseableFn";
 import DataHandler from "../components/DataHandler";
 
 // .env 
-const baseUrl = import.meta.env.VITE_BASE_URL;
+// const baseUrl = import.meta.env.VITE_BASE_URL;
+const baseUrl = import.meta.env.MODE === 'production'  ? '/'  : import.meta.env.VITE_BASE_URL;
 
 const ProfilePage = () => {
   const { data: user, isLoading, isFetching, error } = useGetProfileQuery();
