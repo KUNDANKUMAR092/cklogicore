@@ -39,7 +39,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(morgan("dev"));
 
 // ✅ CORS Configuration
-const allowedOrigins = ["http://localhost:5174", "http://localhost:5173", "https://cklogicore-ajwg.onrender.com", "https://cklogicore.onrender.com/",];
+const allowedOrigins = ["http://localhost:5174", "http://localhost:5173", "https://cklogicore-ajwg.onrender.com", "https://cklogicore.onrender.com",];
 app.use(cors({
   origin: function (origin, callback) {
     if (!origin || allowedOrigins.includes(origin)) {
