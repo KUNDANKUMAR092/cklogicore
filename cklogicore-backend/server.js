@@ -21,7 +21,8 @@ connectDB();
 // --- DEPLOYMENT LOGIC START ---
 
 // Frontend build folder ka path (Parent folder se cklogicore-frontend/dist tak)
-const frontendBuildPath = path.join(__dirname, "../cklogicore-frontend/dist");
+// const frontendBuildPath = path.join(__dirname, "../cklogicore-frontend/dist");
+const frontendBuildPath = path.join(__dirname, "../../dist");
 
 if (process.env.NODE_ENV === "production") {
     // 1. Static files serve karein (CSS, JS, Images)
@@ -29,11 +30,14 @@ if (process.env.NODE_ENV === "production") {
 
     // 2. Kisi bhi non-API route par frontend ki index.html dikhayein
     // Isse React Router live hone par break nahi hoga
-    app.get("*", (req, res) => {
-        // Agar request URL '/api' se start nahi hota, toh index.html bhejein
-        if (!req.url.startsWith('/api')) {
-            res.sendFile(path.resolve(frontendBuildPath, "index.html"));
-        }
+    // app.get("*", (req, res) => {
+    //     // Agar request URL '/api' se start nahi hota, toh index.html bhejein
+    //     if (!req.url.startsWith('/api')) {
+    //         res.sendFile(path.resolve(frontendBuildPath, "index.html"));
+    //     }
+    // });
+    app.get(/^\/(?!api).*/, (req, res) => {
+      res.sendFile(path.resolve(frontendBuildPath, "index.html"));
     });
 } else {
     // Local Development mein sirf ek basic message (Optional)
