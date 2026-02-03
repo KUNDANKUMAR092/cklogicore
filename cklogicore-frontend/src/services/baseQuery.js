@@ -1,5 +1,5 @@
-import { fetchBaseQuery } from "@reduxjs/toolkit/query/react";
-import { setCredentials, logout } from "../features/auth/authSlice";
+import { fetchBaseQuery } from "@reduxjs/toolkit/query/react"
+import { setCredentials, logout } from "../features/auth/authSlice"
 
 const baseURL = import.meta.env.MODE === 'production'  ? '/api/v1'  : 'http://localhost:5000/api/v1';
 
@@ -7,51 +7,35 @@ const baseQuery = fetchBaseQuery({
   baseUrl: baseURL,
   credentials: "include",
   prepareHeaders: (headers, { getState }) => {
-    const token = getState().auth.accessToken;
-    if (token) headers.set("Authorization", `Bearer ${token}`);
-    return headers;
+    const token = getState().auth.accessToken
+    if (token) headers.set("Authorization", `Bearer ${token}`)
+    return headers
   }
-});
+})
 
 export const baseQueryWithReauth = async (args, api, extraOptions) => {
-  // Wait if another request is already refreshing
-  if (isRefreshing) {
-    // Thoda wait karlo taaki naya token state mein aa jaye
-    await new Promise(resolve => setTimeout(resolve, 500));
-  }
-
-  let result = await baseQuery(args, api, extraOptions);
+  let result = await baseQuery(args, api, extraOptions)
 
   if (result.error && result.error.status === 401) {
-    if (!isRefreshing) {
-      isRefreshing = true;
-      try {
-        const refreshResult = await baseQuery(
-          { url: "/auth/refresh-token", method: "POST" },
-          api,
-          extraOptions
-        );
+    try {
+      const refreshResult = await baseQuery(
+        { url: "/auth/refresh-token", method: "GET" },
+        api,
+        extraOptions
+      )
 
-        if (refreshResult.data) {
-          // Backend se user data aur token dono milenge ab
-          api.dispatch(setCredentials(refreshResult.data));
-          
-          // Retry original request
-          result = await baseQuery(args, api, extraOptions);
-        } else {
-          api.dispatch(logout());
-        }
-      } catch {
-        api.dispatch(logout());
-      } finally {
-        isRefreshing = false; // Flag reset karein
+      if (refreshResult.data) {
+        api.dispatch(setCredentials(refreshResult.data)) // ✅ store हटाया
+
+        // retry original request
+        result = await baseQuery(args, api, extraOptions)
+      } else {
+        api.dispatch(logout())
       }
-    } else {
-      // Agar pehle se refresh chal raha hai, toh thoda wait karke retry karein
-      await new Promise(resolve => setTimeout(resolve, 800));
-      result = await baseQuery(args, api, extraOptions);
+    } catch {
+      api.dispatch(logout())
     }
   }
 
-  return result;
-};
+  return result
+}

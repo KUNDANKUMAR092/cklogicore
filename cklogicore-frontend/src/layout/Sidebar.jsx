@@ -29,18 +29,18 @@ export default function Sidebar({ sidebarOpen, toggleSidebar }) {
     { label: "Vehicles", path: "/vehicles", roles: ["OWNER"], hiddenFor: ["VEHICLE"], icon: <FaCar /> },
     
     // Updated Staff Section with Sub-menu
-    { 
-      label: "Staff", 
-      path: "/staff", // Base path
-      roles: ["OWNER"], 
-      hiddenFor: [], 
-      icon: <FaUsers />,
-      isDropdown: true,
-      subItems: [
-        { label: "Staff List", path: "/staff/list", icon: <FaUsers size={14}/> },
-        { label: "Staff Permissions", path: "/staff/staff-permissions", icon: <FaUserShield size={14}/> }, 
-      ]
-    },
+    // { 
+    //   label: "Staff", 
+    //   path: "/staff", // Base path
+    //   roles: ["OWNER"], 
+    //   hiddenFor: [], 
+    //   icon: <FaUsers />,
+    //   isDropdown: true,
+    //   subItems: [
+    //     { label: "Staff List", path: "/staff/list", icon: <FaUsers size={14}/> },
+    //     { label: "Staff Permissions", path: "/staff/staff-permissions", icon: <FaUserShield size={14}/> }, 
+    //   ]
+    // },
   ]
 
   return (
