@@ -209,7 +209,9 @@ const TripPage = () => {
   }, [supplierData, companyData, vehicleData, user, open]);
 
   const handleAddClick = () => {
-    const initialFormValues = {};
+    const initialFormValues = {
+      status: "completed"
+    };
 
     // 🔥 Yahan hum entityId set karenge taki dropdown use auto-select kar sake
     if (user?.accountType === "SUPPLIER") {

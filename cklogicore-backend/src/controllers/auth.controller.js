@@ -130,7 +130,8 @@ export const login = catchAsync(async (req, res) => {
     userId: user._id, 
     accountId: isStaff ? user.accountId : user._id, 
     role: user.role,
-    accountType: isStaff ? "STAFF" : user.accountType 
+    accountType: isStaff ? "STAFF" : user.accountType ,
+    entityId: user.entityId,
   });
 
   const refreshToken = generateRefreshToken({ userId: user._id });
@@ -166,46 +167,103 @@ export const login = catchAsync(async (req, res) => {
 /* ================= REFRESH TOKEN ================= */
 export const refreshToken = catchAsync(async (req, res) => {
   const oldToken = req.cookies.refreshToken;
-  if (!oldToken) return res.status(403).json({ message: "No refresh token" });
+  
+  if (!oldToken) return res.status(403).json({ message: "No refresh token found" });
 
-  const stored = await RefreshToken.findOneAndDelete({ token: oldToken });
+  // 1. Find the token (Delete mat karo turant)
+  const stored = await RefreshToken.findOne({ token: oldToken });
   
   if (!stored) {
-    const decoded = jwt.decode(oldToken);
-    if (decoded) await RefreshToken.deleteMany({ userId: decoded.userId });
+    // Agar token DB mein nahi hai, matlab shayad reuse attack hua hai ya pehle delete ho gaya
     return res.status(403).json({ message: "Security Alert: Please login again." });
   }
 
-  const decoded = jwt.verify(oldToken, process.env.JWT_REFRESH_SECRET);
-  
-  let user = await Account.findById(decoded.userId).lean() || await Staff.findById(decoded.userId).lean();
+  try {
+    // 2. Verify Token
+    const decoded = jwt.verify(oldToken, process.env.JWT_REFRESH_SECRET);
+    
+    // 3. Get User
+    let user = await Account.findById(decoded.userId).lean() || await Staff.findById(decoded.userId).lean();
+    if (!user || !user.isActive) return res.status(403).json({ message: "Account blocked" });
 
-  if (!user || !user.isActive) return res.status(403).json({ message: "Account blocked" });
+    // 4. Generate New Tokens
+    const newAccessToken = generateAccessToken({ 
+      userId: user._id, 
+      role: user.role,
+      accountId: user.accountId || user._id,
+      accountType: user.accountType || (user.role === "STAFF" ? "STAFF" : "OWNER"),
+      entityId: user.entityId,
+    });
+    const newRefreshToken = generateRefreshToken({ userId: user._id });
 
-  const newAccessToken = generateAccessToken({ 
-    userId: user._id, 
-    role: user.role,
-    accountId: user.accountId || user._id 
-  });
-  const newRefreshToken = generateRefreshToken({ userId: user._id });
+    // 5. Update DB (Purana delete karein aur naya daalein)
+    await RefreshToken.deleteOne({ _id: stored._id });
+    await RefreshToken.create({ 
+      userId: user._id, 
+      token: newRefreshToken, 
+      expiresAt: new Date(Date.now() + 7 * 86400000) 
+    });
 
-  await RefreshToken.create({ 
-    userId: user._id, 
-    token: newRefreshToken, 
-    expiresAt: new Date(Date.now() + 7 * 86400000) 
-  });
+    // 6. Set Cookie & Response
+    res.cookie("refreshToken", newRefreshToken, { 
+      httpOnly: true, 
+      secure: process.env.NODE_ENV === "production", 
+      sameSite: "Lax", // Strict se Lax behtar hai development ke liye
+      maxAge: 7 * 24 * 60 * 60 * 1000 
+    });
 
-  res.cookie("refreshToken", newRefreshToken, { httpOnly: true, sameSite: "strict", maxAge: 7 * 24 * 60 * 60 * 1000 });
-  res.json({ 
-    accessToken: newAccessToken, 
-    user: { 
-      id: user._id, 
-      name: user.name, 
-      role: user.role, 
-      accountType: user.accountType 
-    }
-  });
+    res.json({ 
+      accessToken: newAccessToken, 
+      user: { id: user._id, name: user.name, role: user.role, accountType: user.accountType }
+    });
+
+  } catch (err) {
+    // Agar token expire ho gaya ho
+    return res.status(403).json({ message: "Token expired or invalid" });
+  }
 });
+// export const refreshToken = catchAsync(async (req, res) => {
+//   const oldToken = req.cookies.refreshToken;
+//   if (!oldToken) return res.status(403).json({ message: "No refresh token" });
+
+//   const stored = await RefreshToken.findOneAndDelete({ token: oldToken });
+  
+//   if (!stored) {
+//     const decoded = jwt.decode(oldToken);
+//     if (decoded) await RefreshToken.deleteMany({ userId: decoded.userId });
+//     return res.status(403).json({ message: "Security Alert: Please login again." });
+//   }
+
+//   const decoded = jwt.verify(oldToken, process.env.JWT_REFRESH_SECRET);
+  
+//   let user = await Account.findById(decoded.userId).lean() || await Staff.findById(decoded.userId).lean();
+
+//   if (!user || !user.isActive) return res.status(403).json({ message: "Account blocked" });
+
+//   const newAccessToken = generateAccessToken({ 
+//     userId: user._id, 
+//     role: user.role,
+//     accountId: user.accountId || user._id 
+//   });
+//   const newRefreshToken = generateRefreshToken({ userId: user._id });
+
+//   await RefreshToken.create({ 
+//     userId: user._id, 
+//     token: newRefreshToken, 
+//     expiresAt: new Date(Date.now() + 7 * 86400000) 
+//   });
+
+//   res.cookie("refreshToken", newRefreshToken, { httpOnly: true, sameSite: "strict", maxAge: 7 * 24 * 60 * 60 * 1000 });
+//   res.json({ 
+//     accessToken: newAccessToken, 
+//     user: { 
+//       id: user._id, 
+//       name: user.name, 
+//       role: user.role, 
+//       accountType: user.accountType 
+//     }
+//   });
+// });
 
 /* ================= FORGOT PASSWORD ================= */
 export const forgotPassword = catchAsync(async (req, res) => {

@@ -50,10 +50,10 @@ const CrudForm = ({ form, setForm, fields, onRemoveChallan }) => {
   =============================== */
   const handleChange = (e, validationType) => {
     const { name, value, type, files } = e.target;
-    
+
     // 1. Immediate Input Blockers
-    if (type === "number" && value < 0) return; // Prevent negative typing
-    if (validationType === "mobile" && value !== "" && !/^\d+$/.test(value)) return; // Only numbers in mobile
+    if (type === "number" && value < 0) return; 
+    if (validationType === "mobile" && value !== "" && !/^\d+$/.test(value)) return;
 
     let finalValue;
     if (type === "file") {
@@ -68,48 +68,133 @@ const CrudForm = ({ form, setForm, fields, onRemoveChallan }) => {
       finalValue = value;
     }
 
-    // Update Form State (Nested Support)
-    let updatedForm = {};
+    // 2. Update Form State (Nested Support)
+    let updatedForm = { ...form }; // Shallow copy
     if (name.includes(".")) {
       const [parent, key] = name.split(".");
       updatedForm = {
-        ...form,
-        [parent]: { ...(form[parent] || {}), [key]: finalValue },
+        ...updatedForm,
+        [parent]: { ...(updatedForm[parent] || {}), [key]: finalValue },
       };
     } else {
-      updatedForm = { ...form, [name]: finalValue };
+      updatedForm = { ...updatedForm, [name]: finalValue };
     }
 
-    // Auto-Calculation Logic (Preserved)
-    const load = Number(updatedForm.totalTonLoad || 0);
-    const r = updatedForm.rates || {};
-    const f = updatedForm.financials || {};
+    // 3. TRIP CALCULATION LOGIC (Sirf tab chalega jab Trip se related fields change hon)
+    // Ye check ensures ki Supplier/Company forms break na hon
+    const isTripField = name === "totalTonLoad" || name.startsWith("rates.") || name.startsWith("financials.");
 
-    const totalCompany = load * Number(r.companyRatePerTon || 0);
-    const totalVehicle = load * Number(r.vehicleRatePerTon || 0);
-    const totalSupplier = load * Number(r.supplierRatePerTon || 0);
-    
-    const totalExpenses = 
-      Number(f.companyDiesel || 0) + 
-      Number(f.companyTollCost || 0) + 
-      Number(f.companyDriverExpense || 0) + 
-      Number(f.companyOtherExpense || 0);
+    if (isTripField) {
+      const load = Number(updatedForm.totalTonLoad || 0);
+      const r = updatedForm.rates || {};
+      const f = updatedForm.financials || {};
 
-    const profit = totalCompany - totalVehicle - totalExpenses;
+      // Basic Totals
+      const companyGross = load * Number(r.companyRatePerTon || 0);
+      const supplierGross = load * Number(r.supplierRatePerTon || 0);
+      const vehicleGross = load * Number(r.vehicleRatePerTon || 0);
+      
+      // Expense Sums
+      const companyExpTotal = 
+        Number(f.companyAdvance || 0) + Number(f.companyDiesel || 0) + 
+        Number(f.companyTollCost || 0) + Number(f.companyDriverExpense || 0) + 
+        Number(f.companyOtherExpense || 0);
 
-    // Clear error on change if it becomes valid
+      const supplierExpTotal = 
+        Number(f.supplierAdvance || 0) + Number(f.supplierDiesel || 0) + 
+        Number(f.supplierTollCost || 0) + Number(f.supplierDriverExpense || 0) + 
+        Number(f.supplierOtherExpense || 0);
+
+      const vehicleExpTotal = companyExpTotal + supplierExpTotal;
+
+      // Profit and Pendings
+      const profit = companyGross - vehicleGross;
+      const companyPending = companyGross - companyExpTotal;
+      const supplierPending = supplierGross - supplierExpTotal;
+      const vehiclePending = vehicleGross - vehicleExpTotal;
+
+      // Calculated object update
+      updatedForm.calculated = {
+        companyGrossAmount: companyGross,
+        supplierGrossAmount: supplierGross,
+        vehicleGrossAmount: vehicleGross,
+        companyTotalExpense: companyExpTotal,
+        supplierTotalExpense: supplierExpTotal,
+        vehicleTotalExpense: vehicleExpTotal,
+        companyPendingAmount: companyPending,
+        supplierPendingAmount: supplierPending,
+        vehiclePendingAmount: vehiclePending,
+        tripProfit: profit
+      };
+    }
+
+    // Clear error on change
     if (errors[name]) setErrors(prev => ({ ...prev, [name]: "" }));
 
-    setForm({
-      ...updatedForm,
-      totalFinancials: {
-        totalAmountForCompany: totalCompany,
-        totalAmountForVehicle: totalVehicle,
-        totalAmountForSupplier: totalSupplier,
-        profitPerTrip: profit
-      }
-    });
+    setForm(updatedForm);
   };
+  // const handleChange = (e, validationType) => {
+  //   const { name, value, type, files } = e.target;
+    
+  //   // 1. Immediate Input Blockers
+  //   if (type === "number" && value < 0) return; // Prevent negative typing
+  //   if (validationType === "mobile" && value !== "" && !/^\d+$/.test(value)) return; // Only numbers in mobile
+
+  //   let finalValue;
+  //   if (type === "file") {
+  //     const newSelectedFiles = Array.from(files);
+  //     const existingChallans = Array.isArray(form.challans) ? form.challans : [];
+  //     if (existingChallans.length + newSelectedFiles.length > 4) {
+  //       alert("Maximum 4 challans allowed");
+  //       return;
+  //     }
+  //     finalValue = [...existingChallans, ...newSelectedFiles];
+  //   } else {
+  //     finalValue = value;
+  //   }
+
+  //   // Update Form State (Nested Support)
+  //   let updatedForm = {};
+  //   if (name.includes(".")) {
+  //     const [parent, key] = name.split(".");
+  //     updatedForm = {
+  //       ...form,
+  //       [parent]: { ...(form[parent] || {}), [key]: finalValue },
+  //     };
+  //   } else {
+  //     updatedForm = { ...form, [name]: finalValue };
+  //   }
+
+  //   // Auto-Calculation Logic (Preserved)
+  //   const load = Number(updatedForm.totalTonLoad || 0);
+  //   const r = updatedForm.rates || {};
+  //   const f = updatedForm.financials || {};
+
+  //   const totalCompany = load * Number(r.companyRatePerTon || 0);
+  //   const totalVehicle = load * Number(r.vehicleRatePerTon || 0);
+  //   const totalSupplier = load * Number(r.supplierRatePerTon || 0);
+    
+  //   const totalExpenses = 
+  //     Number(f.companyDiesel || 0) + 
+  //     Number(f.companyTollCost || 0) + 
+  //     Number(f.companyDriverExpense || 0) + 
+  //     Number(f.companyOtherExpense || 0);
+
+  //   const profit = totalCompany - totalVehicle - totalExpenses;
+
+  //   // Clear error on change if it becomes valid
+  //   if (errors[name]) setErrors(prev => ({ ...prev, [name]: "" }));
+
+  //   setForm({
+  //     ...updatedForm,
+  //     totalFinancials: {
+  //       totalAmountForCompany: totalCompany,
+  //       totalAmountForVehicle: totalVehicle,
+  //       totalAmountForSupplier: totalSupplier,
+  //       profitPerTrip: profit
+  //     }
+  //   });
+  // };
 
   const handleBlur = (e, validationType, required) => {
     const { name, value } = e.target;

@@ -114,11 +114,22 @@ export const getTripFields = (accountType, currentId) => [
   { name: "financials.supplierDriverExpense", label: "Driver Expense by Supplier", type: "number", hidden: accountType === "vehicle", validationType: "positiveNumber" },
   { name: "financials.supplierOtherExpense", label: "Other Expense By Supplier", type: "number", hidden: accountType === "vehicle", validationType: "positiveNumber" },
 
-  // Calculated Fields (Disabled)
-  { name: "totalFinancials.totalAmountForCompany", label: "Total Company Pay", type: "number", disabled: true },
-  { name: "totalFinancials.totalAmountForVehicle", label: "Total Vehicle Pay", type: "number", disabled: true },
-  { name: "totalFinancials.totalAmountForSupplier", label: "Total Supplier Pay", type: "number", disabled: true },
-  { name: "totalFinancials.profitPerTrip", label: "Expected Profit", type: "number", disabled: true },
+  // Expense Summaries
+  { name: "calculated.companyTotalExpense", label: "Company Total Expense", type: "number", disabled: true },
+  { name: "calculated.supplierTotalExpense", label: "Supplier Total Expense", type: "number", disabled: true },
+  { name: "calculated.vehicleTotalExpense", label: "Vehicle Total Expense", type: "number", hidden: accountType === "supplier", disabled: true },
+
+  // Gross Amounts (Rate * Ton)
+  { name: "calculated.companyGrossAmount", label: "Company Total Amount", type: "number", disabled: true },
+  { name: "calculated.supplierGrossAmount", label: "Supplier Total Amount", type: "number", hidden: accountType === "supplier",  disabled: true },
+  { name: "calculated.vehicleGrossAmount", label: "Vehicle Total Amount", type: "number", disabled: true },
+
+  // Pending Amounts
+  { name: "calculated.companyPendingAmount", label: "Company Pending Amount", type: "number", disabled: true },
+  { name: "calculated.supplierPendingAmount", label: "Supplier Pending Amount", type: "number", hidden: accountType === "supplier",  disabled: true },
+  { name: "calculated.vehiclePendingAmount", label: "Vehicle Pending Amount", type: "number", disabled: true },
+
+  { name: "calculated.tripProfit", label: "Trip Profit", type: "number", disabled: true },
 
   { 
     name: "challans", 
@@ -132,11 +143,12 @@ export const getTripFields = (accountType, currentId) => [
     name: "status", 
     label: "Status", 
     type: "select", 
+    defaultValue: "completed",
     options: [
-      { label: "Pending", value: "pending" },
-      { label: "Running", value: "running" },
       { label: "Completed", value: "completed" },
-      { label: "Cancelled", value: "cancelled" },
+      { label: "Pending", value: "pending" },
+      // { label: "Running", value: "running" },
+      // { label: "Cancelled", value: "cancelled" },
     ]
   },
 ];

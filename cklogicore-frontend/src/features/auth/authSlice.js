@@ -14,6 +14,7 @@ const authSlice = createSlice({
   reducers: {
     setCredentials: (state, action) => {
       const { user, accessToken, entityId } = action.payload;
+      console.log("entityId====>", entityId);
       state.user = user;
       state.accessToken = accessToken;
       state.entityId = entityId || user?.entityId || null;

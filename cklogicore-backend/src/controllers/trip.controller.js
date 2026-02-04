@@ -101,11 +101,12 @@ export const getTrips = catchAsync(async (req, res) => {
         summary: [{
           $group: {
             _id: null,
-            totalProfit: { $sum: "$totalFinancials.profitPerTrip" },
-            totalCompanyPay: { $sum: "$totalFinancials.totalAmountForCompany" },
-            totalVehiclePay: { $sum: "$totalFinancials.totalAmountForVehicle" },
-            totalSupplierPay: { $sum: "$totalFinancials.totalAmountForSupplier" },
-            totalWeight: { $sum: "$totalTonLoad" }, // ✅ Added Total Weight Sum
+            totalProfit: { $sum: "$calculated.tripProfit" }, // Changed from totalFinancials
+            totalCompanyGross: { $sum: "$calculated.companyGrossAmount" },
+            totalVehicleGross: { $sum: "$calculated.vehicleGrossAmount" },
+            totalCompanyPending: { $sum: "$calculated.companyPendingAmount" },
+            totalVehiclePending: { $sum: "$calculated.vehiclePendingAmount" },
+            totalWeight: { $sum: "$totalTonLoad" },
             tripCount: { $sum: 1 }
           }
         }],
@@ -116,13 +117,40 @@ export const getTrips = catchAsync(async (req, res) => {
         ]
       }
     }
+    // {
+    //   $facet: {
+    //     metadata: [{ $count: "total" }],
+    //     summary: [{
+    //       $group: {
+    //         _id: null,
+    //         totalProfit: { $sum: "$totalFinancials.profitPerTrip" },
+    //         totalCompanyPay: { $sum: "$totalFinancials.totalAmountForCompany" },
+    //         totalVehiclePay: { $sum: "$totalFinancials.totalAmountForVehicle" },
+    //         totalSupplierPay: { $sum: "$totalFinancials.totalAmountForSupplier" },
+    //         totalWeight: { $sum: "$totalTonLoad" }, // ✅ Added Total Weight Sum
+    //         tripCount: { $sum: 1 }
+    //       }
+    //     }],
+    //     data: [
+    //       { $sort: { [sortBy]: Number(sortOrder) } },
+    //       { $skip: skip },
+    //       { $limit: Number(limit) }
+    //     ]
+    //   }
+    // }
   ];
 
   const result = await Trip.aggregate(pipeline);
 
   const totalRecords = result[0].metadata[0]?.total || 0;
   const summary = result[0].summary[0] || { 
-    totalProfit: 0, totalCompanyPay: 0, totalVehiclePay: 0, totalSupplierPay: 0, totalWeight: 0, tripCount: 0 
+    totalProfit: 0, 
+    totalCompanyGross: 0, 
+    totalVehicleGross: 0, 
+    totalCompanyPending: 0, 
+    totalVehiclePending: 0, 
+    totalWeight: 0, 
+    tripCount: 0 
   };
   const trips = result[0].data;
 
@@ -151,20 +179,49 @@ export const updateTrip = catchAsync(async (req, res) => {
   const { id } = req.params;
   const { accountId } = req.user;
   let updateData = { ...req.body };
-  delete updateData.totalFinancials;
+  
+  // Important: calculated field ko delete karein taaki hook ise naye tareeke se generate kare
+  delete updateData.calculated; 
 
   const trip = await Trip.findOne({ _id: id, accountId, isDeleted: false });
   if (!trip) return res.status(404).json({ success: false, message: "Trip not found" });
 
-  if (updateData.rates) trip.rates = { ...trip.rates.toObject(), ...updateData.rates };
-  if (updateData.financials) trip.financials = { ...trip.financials.toObject(), ...updateData.financials };
+  // Rates aur Financials ko deep merge karein
+  if (updateData.rates) {
+    trip.rates = { ...trip.rates.toObject(), ...updateData.rates };
+  }
+  if (updateData.financials) {
+    trip.financials = { ...trip.financials.toObject(), ...updateData.financials };
+  }
   
-  delete updateData.rates; delete updateData.financials;
+  // Clean up and update other fields
+  delete updateData.rates; 
+  delete updateData.financials;
   Object.assign(trip, updateData);
 
-  await trip.save();
+  // trip.save() karne se model ka pre-save hook trigger hoga aur calculation update ho jayegi
+  await trip.save(); 
+  
   res.json({ success: true, message: "Trip updated", data: trip });
 });
+// export const updateTrip = catchAsync(async (req, res) => {
+//   const { id } = req.params;
+//   const { accountId } = req.user;
+//   let updateData = { ...req.body };
+//   delete updateData.totalFinancials;
+
+//   const trip = await Trip.findOne({ _id: id, accountId, isDeleted: false });
+//   if (!trip) return res.status(404).json({ success: false, message: "Trip not found" });
+
+//   if (updateData.rates) trip.rates = { ...trip.rates.toObject(), ...updateData.rates };
+//   if (updateData.financials) trip.financials = { ...trip.financials.toObject(), ...updateData.financials };
+  
+//   delete updateData.rates; delete updateData.financials;
+//   Object.assign(trip, updateData);
+
+//   await trip.save();
+//   res.json({ success: true, message: "Trip updated", data: trip });
+// });
 
 // STATUS TOGGLE
 export const toggleTripStatus = catchAsync(async (req, res) => {

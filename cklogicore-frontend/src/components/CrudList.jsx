@@ -29,6 +29,8 @@ export default function CrudList({
   error,
   onRemoveChallan,
 }) {
+  const baseUrl = import.meta.env.MODE === 'production'  ? '/'  : import.meta.env.VITE_BASE_URL;
+  
   const [editData, setEditData] = useState(null);
 
   /* ================= 1. SAFE DATA LOGIC ================= */

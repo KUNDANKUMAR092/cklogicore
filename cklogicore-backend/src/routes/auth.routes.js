@@ -17,7 +17,7 @@ router.post("/register", validate(registerSchema), register);
 router.post("/login", loginLimiter, validate(loginSchema), login);
 
 // 3. REFRESH TOKEN:
-router.post("/refresh-token", loginLimiter, refreshToken);
+router.post("/refresh-token", refreshToken);
 
 // 4. LOGOUT:
 router.post("/logout", authMiddleware, audit("LOGOUT", "USER"), logout);
