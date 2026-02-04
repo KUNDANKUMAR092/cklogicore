@@ -116,7 +116,6 @@ const TripPage = () => {
         ? form.challans.filter(f => f instanceof File) 
         : [];
 
-      console.log(form, newTripId, newFiles)
       // 3. Agar data hai, tabhi addChallans API call hogi
       if (newFiles.length > 0 && newTripId) {
         // Aapki API ({ id, files }) format mang rahi hai

@@ -17,7 +17,6 @@ const baseUrl = import.meta.env.MODE === 'production'  ? '/'  : import.meta.env.
 
 const ProfilePage = () => {
   const { data: user, isLoading, isFetching, error } = useGetProfileQuery();
-  console.log(user)
   const [updateProfile, { isLoading: isUpdating }] = useUpdateProfileMutation();
   const [updateAvatar] = useUpdateAvatarMutation();
   const [updateBanner] = useUpdateBannerMutation();

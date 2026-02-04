@@ -35,13 +35,12 @@ export const validate = (schema) => {
     try {
       const body = req.body || {};
       const parsedBody = nestedObjectParser(body);
-
       const parsedData = schema.parse({
         body: parsedBody,
         query: req.query,
         params: req.params,
       });
-
+      
       req.body = parsedData.body;
       next(); // <--- Confirm karein ki ye execute ho raha hai
     } catch (err) {

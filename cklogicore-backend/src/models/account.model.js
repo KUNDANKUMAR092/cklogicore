@@ -14,7 +14,8 @@ const accountSchema = new mongoose.Schema({
   },
   mobile: {
     type: String,
-    required: true, 
+    required: [true, "Mobile number is required"], 
+    unique: true,
     trim: true
   },
   secondaryEmail: {

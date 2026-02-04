@@ -30,67 +30,75 @@ const getEntityId = async (accountId, accountType) => {
   return entity ? entity._id : null;
 };
 
-/* ================= REGISTER (With Auto-Profile Creation) ================= */
 export const register = catchAsync(async (req, res) => {
+
   const { name, email, password, accountType, mobile } = req.body;
 
-  // 1. Check if email already exists
-  const exists = await Account.findOne({ email }).lean();
-  if (exists) return res.status(400).json({ message: "Email already registered" });
+  // 1. DYNAMIC CONFLICT CHECK (Handles Corrupted/Missing Data)
+  const query = { $or: [] };
+  if (email) query.$or.push({ email });
+  if (mobile) query.$or.push({ mobile });
 
-  const hashed = await bcrypt.hash(password, 12);
-  
-  // 2. Create the main Account
-  const account = await Account.create({
-    name,
-    email,
-    mobile, // Mobile bhi add kar diya hai validation ke liye
-    password: hashed,
-    accountType,
-    role: "OWNER"
-  });
+  const exists = await Account.findOne(query).lean();
 
-  // 3. 🔥 AUTO-PROFILE CREATION: Based on accountType
-  // Isse entityId turant create ho jayegi
-  let entityId = null;
+  if (exists) {
+    const isEmailMatch = email && exists.email && exists.email === email;
+    const isMobileMatch = mobile && exists.mobile && exists.mobile === mobile;
 
-  if (accountType === "SUPPLIER") {
-    const supplier = await SupplierOwner.create({
-      name: name, // Default business name same as user name
-      mobile: mobile,
-      accountId: account._id,
-    });
-    entityId = supplier._id;
-  } 
-  else if (accountType === "COMPANY") {
-    const company = await CompanyOwner.create({
-      name: name,
-      mobile: mobile,
-      accountId: account._id,
-    });
-    entityId = company._id;
-  } 
-  else if (accountType === "VEHICLE") {
-    const vehicle = await VehicleOwner.create({
-      name: name,
-      mobile: mobile,
-      accountId: account._id,
-    });
-    entityId = vehicle._id;
+    if (isEmailMatch || isMobileMatch) {
+      return res.status(400).json({ 
+        success: false, 
+        message: isEmailMatch ? "Email already registered" : "Mobile number already registered" 
+      });
+    }
   }
 
-  // 4. Security: Remove password from response
-  const accountData = account.toObject();
-  delete accountData.password;
-
-  res.status(201).json({ 
-    success: true, 
-    message: `${accountType} account and profile created successfully`, 
-    data: {
-      ...accountData,
-      entityId // Response mein entityId bhej rahe hain
-    } 
+  // 2. HASH PASSWORD
+  const hashed = await bcrypt.hash(password, 12);
+  
+  // 3. CREATE ACCOUNT
+  const account = await Account.create({
+    name, email, mobile: mobile, password: hashed, accountType, role: "OWNER"
   });
+
+  // 4. SAFE PROFILE CREATION (Using Try-Catch to prevent crashes)
+  try {
+    let entityId = null;
+    const profileData = { name, mobile, accountId: account._id, createdBy: account._id };
+
+    if (accountType === "SUPPLIER") {
+      const supplier = await SupplierOwner.create(profileData);
+      entityId = supplier._id;
+    } else if (accountType === "COMPANY") {
+      const company = await CompanyOwner.create(profileData);
+      entityId = company._id;
+    } else if (accountType === "VEHICLE") {
+      const vehicle = await VehicleOwner.create(profileData);
+      entityId = vehicle._id;
+    }
+
+    // Success Response
+    const accountData = account.toObject();
+    delete accountData.password;
+
+    res.status(201).json({ 
+      success: true, 
+      message: `${accountType} account created successfully`, 
+      data: { ...accountData, entityId } 
+    });
+
+  } catch (error) {
+    // 🔥 CRITICAL: Agar profile nahi bani, toh bane hue account ko delete karo
+    // Taaki database mein "aadhe-adhure" records na rahein
+    await Account.findByIdAndDelete(account._id);
+    
+    console.error("CRASH PREVENTED: Profile creation failed ->", error.message);
+    
+    res.status(400).json({ 
+      success: false, 
+      message: "Registration failed during profile setup: " + error.message 
+    });
+  }
 });
 
 /* ================= LOGIN (Owner & Staff Dono ke liye) ================= */
