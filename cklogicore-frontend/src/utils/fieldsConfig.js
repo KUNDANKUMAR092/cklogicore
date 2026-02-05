@@ -100,19 +100,19 @@ export const getTripFields = (accountType, currentId) => [
     validationType: "positiveNumber" 
   },
 
-  // Company Financials
-  { name: "financials.companyAdvance", label: "Advance by Company", type: "number", hidden: accountType === "vehicle", validationType: "positiveNumber" },
-  { name: "financials.companyDiesel", label: "Diesel by Company", type: "number", hidden: accountType === "vehicle", validationType: "positiveNumber" },
-  { name: "financials.companyTollCost", label: "Toll Cost By Company", type: "number", hidden: accountType === "vehicle", validationType: "positiveNumber" },
-  { name: "financials.companyDriverExpense", label: "Driver Expense By Company", type: "number", hidden: accountType === "vehicle", validationType: "positiveNumber" },
-  { name: "financials.companyOtherExpense", label: "Other Expense By Company", type: "number", hidden: accountType === "vehicle", validationType: "positiveNumber" },
-
   // Supplier Financials
   { name: "financials.supplierAdvance", label: "Advance by Supplier", type: "number", hidden: accountType === "vehicle", validationType: "positiveNumber" },
   { name: "financials.supplierDiesel", label: "Diesel by Supplier", type: "number", hidden: accountType === "vehicle", validationType: "positiveNumber" },
   { name: "financials.supplierTollCost", label: "Toll Cost by Supplier", type: "number", hidden: accountType === "vehicle", validationType: "positiveNumber" },
   { name: "financials.supplierDriverExpense", label: "Driver Expense by Supplier", type: "number", hidden: accountType === "vehicle", validationType: "positiveNumber" },
   { name: "financials.supplierOtherExpense", label: "Other Expense By Supplier", type: "number", hidden: accountType === "vehicle", validationType: "positiveNumber" },
+
+  // Company Financials
+  { name: "financials.companyAdvance", label: "Advance by Company", type: "number", hidden: accountType === "vehicle", validationType: "positiveNumber" },
+  { name: "financials.companyDiesel", label: "Diesel by Company", type: "number", hidden: accountType === "vehicle", validationType: "positiveNumber" },
+  { name: "financials.companyTollCost", label: "Toll Cost By Company", type: "number", hidden: accountType === "vehicle", validationType: "positiveNumber" },
+  { name: "financials.companyDriverExpense", label: "Driver Expense By Company", type: "number", hidden: accountType === "vehicle", validationType: "positiveNumber" },
+  { name: "financials.companyOtherExpense", label: "Other Expense By Company", type: "number", hidden: accountType === "vehicle", validationType: "positiveNumber" },
 
   // Expense Summaries
   { name: "calculated.companyTotalExpense", label: "Company Total Expense", type: "number", disabled: true },
